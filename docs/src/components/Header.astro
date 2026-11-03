@@ -1,38 +1,45 @@
 ---
 // docs/src/components/Header.astro
+import { REPO_URL, ISSUES_URL, SPONSOR_URL } from "../site";
 ---
 
-<header class="sticky top-0 z-50 border-b border-[#111C2D] bg-[#0B1422]/95 backdrop-blur-sm">
+<header class="sticky top-0 z-50 border-b border-brand-card bg-brand-bg/95 backdrop-blur-xs">
   <nav class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-    <a href="/" class="flex items-center gap-2 text-lg font-bold transition-colors group">
+    <a href="/" class="flex shrink-0 items-center gap-2 whitespace-nowrap text-lg font-bold transition-colors group">
       <span class="text-3xl">💬</span>
-      <span class="inline-flex animate-background-shine bg-[linear-gradient(110deg,#939393,45%,#1e293b,55%,#939393)] bg-[length:250%_100%] bg-clip-text text-transparent">universal-comments</span>
+      <span class="inline-flex animate-background-shine bg-[linear-gradient(110deg,#939393,45%,#1e293b,55%,#939393)] bg-size-[250%_100%] bg-clip-text text-transparent">universal-comments</span>
     </a>
-    <ul class="hidden md:flex items-center gap-6 text-lg text-white/70">
+    <ul class="hidden md:flex items-center gap-4 lg:gap-6 whitespace-nowrap text-base lg:text-lg text-white/70">
       <li><a href="/guia-rapida" class="hover:text-white transition-colors">Guía rápida</a></li>
+      <li><a href="/adaptadores" class="hover:text-white transition-colors">Adaptadores</a></li>
       <li><a href="/api" class="hover:text-white transition-colors">API</a></li>
       <li><a href="/ejemplos" class="hover:text-white transition-colors">Ejemplos</a></li>
       <li><a href="/contribuir" class="hover:text-white transition-colors">Contribuir</a></li>
     </ul>
     <div class="hidden md:flex items-center gap-2">
-    <a href="https://github.com/ingyesid24/universal-comments/issues/new" target="_blank" rel="noopener noreferrer" class="hidden md:flex items-center gap-1.5 rounded-lg border border-[#111C2D] px-3 py-1.5 text-sm text-white/70 hover:text-white hover:border-white/20 transition-colors ">
+    <a href={SPONSOR_URL} target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 rounded-lg border border-pink-500/40 bg-pink-500/10 px-3 py-1.5 text-sm text-pink-200 hover:bg-pink-500/20 hover:text-white transition-colors">
+      <span aria-hidden="true">♥</span> Sponsor
+    </a>
+    <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer" aria-label="Reportar un bug" class="hidden lg:flex items-center gap-1.5 rounded-lg border border-brand-card px-3 py-1.5 text-sm text-white/70 hover:text-white hover:border-white/20 transition-colors ">
       🐛
     </a>
-    <a href="https://github.com/ingyesid24/universal-comments" target="_blank" rel="noopener noreferrer" class="hidden md:flex items-center gap-1.5 rounded-lg border border-[#111C2D] px-3 py-1.5 text-sm text-white/70 hover:text-white hover:border-white/20 transition-colors">
+    <a href={REPO_URL} target="_blank" rel="noopener noreferrer" aria-label="Repositorio en GitHub" class="hidden md:flex items-center gap-1.5 rounded-lg border border-brand-card px-3 py-1.5 text-sm text-white/70 hover:text-white hover:border-white/20 transition-colors">
       <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg></a>
     </div>
     <!-- mobile menu toggle -->
     <button id="menu-toggle" class="md:hidden text-white/70 hover:text-white text-2xl" aria-label="Menú">☰</button>
   </nav>
   <!-- mobile menu -->
-  <div id="mobile-menu" class="hidden md:hidden border-t border-[#111C2D] flex flex-col items-center justify-center px-6 py-4 space-y-5 text-lg md:hidden">
+  <div id="mobile-menu" class="hidden md:hidden border-t border-brand-card flex flex-col items-center justify-center px-6 py-4 space-y-5 text-lg md:hidden">
     <a href="/guia-rapida" class="block text-white/70 hover:text-white">Guía rápida</a>
+    <a href="/adaptadores" class="block text-white/70 hover:text-white">Adaptadores</a>
     <a href="/api" class="block text-white/70 hover:text-white">API</a>
     <a href="/ejemplos" class="block text-white/70 hover:text-white">Ejemplos</a>
     <a href="/contribuir" class="block text-white/70 hover:text-white">Contribuir</a>
-    <div class="border-t border-[#111C2D] flex justify-center gap-4 pt-3">
-    <a href="https://github.com/ingyesid24/universal-comments/issues/new" target="_blank" class="block text-white/70 hover:text-white text-2xl">🐛</a>
-    <a href="https://github.com/ingyesid24/universal-comments" target="_blank" class="block text-white/70 hover:text-white"><svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg></a>
+    <a href={SPONSOR_URL} target="_blank" rel="noopener noreferrer" class="block rounded-lg border border-pink-500/40 bg-pink-500/10 px-4 py-1.5 text-pink-200 hover:text-white">♥ Sponsor</a>
+    <div class="border-t border-brand-card flex justify-center gap-4 pt-3">
+    <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer" aria-label="Reportar un bug" class="block text-white/70 hover:text-white text-2xl">🐛</a>
+    <a href={REPO_URL} target="_blank" rel="noopener noreferrer" aria-label="Repositorio en GitHub" class="block text-white/70 hover:text-white"><svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg></a>
     </div>
   </div>
 </header>

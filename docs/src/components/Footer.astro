@@ -1,17 +1,22 @@
 ---
 // docs/src/components/Footer.astro
+import { REPO_URL, NPM_URL, SPONSOR_URL } from "../site";
 ---
 
-<footer class="border-t border-[#111C2D] px-6 py-8 mt-20">
+<footer class="border-t border-brand-card px-6 py-8 mt-20">
   <div class="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-white/40">
     <p>
       © {new Date().getFullYear()} universal-comments —
       <a
-        href="https://github.com/ingyesid24/universal-comments/blob/main/LICENSE"
+        href={`${REPO_URL}/blob/main/LICENSE`}
         target="_blank"
         rel="noopener noreferrer"
         class="text-white/60 hover:text-white transition-colors"
       >MIT License</a>
+      ·
+      <a href={NPM_URL} target="_blank" rel="noopener noreferrer" class="text-white/60 hover:text-white transition-colors">npm</a>
+      ·
+      <a href={SPONSOR_URL} target="_blank" rel="noopener noreferrer" class="text-pink-300 hover:text-white transition-colors">♥ Apoya el proyecto</a>
     </p>
     <p>
       Hecho con

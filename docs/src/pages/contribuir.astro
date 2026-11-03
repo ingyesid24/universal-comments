@@ -2,24 +2,25 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Sidebar from "../components/Sidebar.astro";
 import CodeBlock from "../components/CodeBlock.astro";
+import { REPO_URL, ISSUES_URL, SPONSOR_URL } from "../site";
 ---
 
 <BaseLayout title="Contribuir — universal-comments">
-  <div class="fixed inset-0 pointer-events-none bg-[radial-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:24px_24px]">
+  <div class="fixed inset-0 pointer-events-none bg-[radial-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] bg-size-[24px_24px]">
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.08),transparent_70%)]"></div>
   </div>
   <div class="mx-auto max-w-7xl px-6 pt-12 pb-20 flex gap-12">
     <Sidebar />
     <article class="min-w-0 flex-1 max-w-3xl prose prose-invert">
-      <h1 class="text-3xl font-bold inline-block bg-gradient-to-r from-white via-[#3b82f6] to-white bg-[length:200%_auto] bg-clip-text text-transparent animate-background-shine">Contribuir</h1>
+      <h1 class="text-3xl font-bold inline-block bg-linear-to-r from-white via-brand-blue to-white bg-size-[200%_auto] bg-clip-text text-transparent animate-background-shine">Contribuir</h1>
       <p class="text-white/60">¿Encontraste un bug o tienes una idea? Este proyecto es open source y las contribuciones son bienvenidas.</p>
 
       <h2 class="text-xl font-semibold mt-8">Repositorio</h2>
       <p class="text-white/60">
         Todo el código está en
-        <a href="https://github.com/ingyesid24/universal-comments" target="_blank" rel="noopener noreferrer" class="relative inline-flex overflow-hidden rounded-lg p-[1px] text-[#3b82f6] hover:underline">
+        <a href={REPO_URL} target="_blank" rel="noopener noreferrer" class="relative inline-flex overflow-hidden rounded-lg p-px text-brand-blue hover:underline">
           <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,transparent_50%,rgba(59,130,246,0.4)_100%)]" />
-          <span class="relative inline-flex items-center rounded-lg bg-[#0B1422] px-2 py-0.5 text-sm backdrop-blur-3xl">github.com/ingyesid24/universal-comments</span>
+          <span class="relative inline-flex items-center rounded-lg bg-brand-bg px-2 py-0.5 text-sm backdrop-blur-3xl">github.com/ingyesid24/universal-comments</span>
         </a>
       </p>
 
@@ -29,32 +30,42 @@ cd universal-comments
 npm install`} lang="bash" />
 
       <h2 class="text-xl font-semibold mt-8">Comandos útiles</h2>
-      <div class="relative overflow-hidden rounded-xl border border-[#111C2D] p-[1px] backdrop-blur-3xl">
+      <div class="relative overflow-hidden rounded-xl border border-brand-card p-px backdrop-blur-3xl">
         <span class="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,rgba(136,120,230,0.4)_50%,rgba(59,130,246,0.4)_100%)]" />
-        <div class="relative bg-[#0B1422] rounded-xl">
-          <CodeBlock code={`npm run build    # Compila la librería a dist/
-npm run test    # Ejecuta los tests
-npm run dev     # (librería) Ya no aplica, la librería se publica como bundle`} lang="bash" />
+        <div class="relative bg-brand-bg rounded-xl">
+          <CodeBlock code={`npm run build        # Compila la librería a dist/
+npm run typecheck    # Comprueba src y tests
+npm test             # Ejecuta los tests
+npm run test:package # Contrato del paquete construido
+npm run dev          # Demo local con adaptador en memoria
+npm run preview      # Construye y previsualiza el demo`} lang="bash" />
         </div>
       </div>
 
       <h2 class="text-xl font-semibold mt-8">Estructura del proyecto</h2>
-      <div class="relative overflow-hidden rounded-xl border border-[#111C2D] p-[1px] backdrop-blur-3xl">
+      <div class="relative overflow-hidden rounded-xl border border-brand-card p-px backdrop-blur-3xl">
         <span class="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(136,120,230,0.4)_0%,rgba(59,130,246,0.4)_50%,rgba(136,120,230,0.4)_100%)]" />
-        <div class="relative bg-[#0B1422] rounded-xl">
+        <div class="relative bg-brand-bg rounded-xl">
           <CodeBlock code={`src/
   universal-comments.ts    # Componente principal (LitElement)
-  universal-comments.test.ts  # Tests
+  types.ts                 # Contratos públicos (Comment, CommentsAdapter...)
+  errors.ts                # CommentsAdapterError
+  messages.ts              # Textos por defecto
+  adapters/                # Adaptador en memoria y REST
+  universal-comments.test.ts       # Tests legacy
+  universal-comments.adapter.test.ts # Tests con adaptadores
 
 docs/                   # Sitio de documentación (Astro)
   src/
-    pages/              # Landing, guía, API, ejemplos, contribuir
+    pages/              # Landing, guía, adaptadores, API, ejemplos, contribuir
     components/         # Header, Footer, DemoEmbed, CodeBlock
     layouts/            # BaseLayout
 
 dist/                   # Output de la build
   universal-comments.es.js
-  universal-comments.umd.js`} lang="text" />
+  universal-comments.umd.cjs
+  adapters.es.js
+  adapters.cjs`} lang="text" />
         </div>
       </div>
 
@@ -62,7 +73,7 @@ dist/                   # Output de la build
       <ol class="text-white/60 space-y-2">
         <li>1. Haz fork del repositorio</li>
         <li>2. Crea una rama: <code class="text-white">git checkout -b mi-feature</code></li>
-        <li>3. Haz tus cambios y corre los tests: <code class="text-white">npm test</code></li>
+        <li>3. Haz tus cambios y corre las comprobaciones: <code class="text-white">npm run typecheck && npm test</code></li>
         <li>4. Asegúrate de que la build pase: <code class="text-white">npm run build</code></li>
         <li>5. Abre un Pull Request (PR) describiendo los cambios</li>
         <li>6. Espera la revisión y aprobación del mantenedor — <strong class="text-white">nadie puede mergear sin aprobación</strong></li>
@@ -78,7 +89,7 @@ dist/                   # Output de la build
 
       <h2 class="text-xl font-semibold mt-8">Reportar bugs</h2>
       <p class="text-white/60">
-        Si encuentras un bug, <a href="https://github.com/ingyesid24/universal-comments/issues/new" target="_blank" rel="noopener noreferrer" class="text-[#3b82f6] hover:underline">abre un issue aquí</a> con:
+        Si encuentras un bug, <a href={ISSUES_URL} target="_blank" rel="noopener noreferrer" class="text-brand-blue hover:underline">abre un issue aquí</a> con:
       </p>
       <ul class="text-white/60">
         <li>• Versión del componente</li>
@@ -86,6 +97,20 @@ dist/                   # Output de la build
         <li>• Pasos para reproducir</li>
         <li>• Comportamiento esperado vs actual</li>
       </ul>
+
+      <h2 class="text-xl font-semibold mt-8">Apoyar el proyecto</h2>
+      <p class="text-white/60">
+        Si usas universal-comments en tu sitio o en el de un cliente, puedes financiar su mantenimiento
+        (nuevas funciones, adaptadores y soporte) a través de
+        <a href={SPONSOR_URL} target="_blank" rel="noopener noreferrer" class="text-pink-300 hover:underline">GitHub Sponsors</a>.
+        También ayuda mucho:
+      </p>
+      <ul class="text-white/60">
+        <li>• Dar una ⭐ al repositorio</li>
+        <li>• Contar en un post o tuit cómo lo usas</li>
+        <li>• Enlazar a la documentación desde tu proyecto</li>
+      </ul>
+      <a href={SPONSOR_URL} target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex items-center gap-2 rounded-xl border border-pink-500/50 bg-pink-500/15 px-5 py-2.5 font-bold text-pink-100 hover:bg-pink-500/25 transition-colors">♥ Patrocinar en GitHub</a>
 
       <h2 class="text-xl font-semibold mt-8">Licencia</h2>
       <p class="text-white/60">MIT — puedes usarlo, modificarlo y distribuirlo libremente.</p>

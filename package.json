@@ -1,18 +1,37 @@
 {
   "name": "universal-comments",
   "version": "0.1.0",
-  "description": "Web Component de sección de comentarios — dark theme, emoji reactions, responsive grid. Funciona en React, HTML, Next.js, Astro y cualquier framework.",
+  "description": "Drop-in comments section Web Component (Lit): emoji reactions, dark/light theme, REST adapters. Works in HTML, React, Vue, Astro, Next.js. Web Component de comentarios para cualquier framework.",
   "type": "module",
   "main": "dist/universal-comments.umd.cjs",
   "module": "dist/universal-comments.es.js",
   "types": "dist-types/universal-comments.d.ts",
+  "unpkg": "dist/universal-comments.es.js",
+  "jsdelivr": "dist/universal-comments.es.js",
   "exports": {
     ".": {
       "types": "./dist-types/universal-comments.d.ts",
       "import": "./dist/universal-comments.es.js",
       "require": "./dist/universal-comments.umd.cjs"
+    },
+    "./adapters": {
+      "types": "./dist-types/adapters/index.d.ts",
+      "import": "./dist/adapters.es.js",
+      "require": "./dist/adapters.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "adapters": [
+        "dist-types/adapters/index.d.ts"
+      ]
     }
   },
+  "sideEffects": [
+    "./dist/universal-comments.es.js",
+    "./dist/universal-comments.umd.cjs"
+  ],
   "files": [
     "dist",
     "dist-types",
@@ -21,11 +40,31 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.json && vite build",
-    "preview": "vite preview",
+    "clean": "node scripts/clean.mjs",
+    "build": "npm run clean && tsc -p tsconfig.json && vite build && vite build --config vite.adapters.config.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
+    "preview": "npm run build:demo && vite preview --config vite.demo.config.js",
+    "build:demo": "vite build --config vite.demo.config.js",
     "test": "web-test-runner",
-    "prepublishOnly": "npm run build"
+    "test:package": "node scripts/package-contract.mjs",
+    "test:package:cjs": "node scripts/cjs-contract.cjs",
+    "test:types": "tsc -p scripts/type-consumer/tsconfig.node16.json && tsc -p scripts/type-consumer/tsconfig.bundler.json",
+    "smoke": "npm run build && node scripts/smoke.mjs",
+    "prepublishOnly": "npm run build && npm run test:package && npm run test:package:cjs"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ingyesid24/universal-comments.git"
+  },
+  "homepage": "https://components-comentarios.vercel.app/",
+  "bugs": {
+    "url": "https://github.com/ingyesid24/universal-comments/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/ingyesid24"
+  },
+  "author": "ingyesid24",
   "dependencies": {
     "lit": "^3.3.3",
     "timeago.js": "^4.0.2"
@@ -33,20 +72,35 @@
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
     "@lit-labs/testing": "^0.2.8",
-    "@types/node": "^25.9.1",
-    "@web/dev-server-esbuild": "^1.0.5",
-    "@web/test-runner": "^0.20.2",
-    "@web/test-runner-playwright": "^0.11.1",
-    "typescript": "^6.0.3",
-    "vite": "^5.1.0"
+    "@types/node": "^26.6.6",
+    "@web/dev-server-esbuild": "^2.0.0",
+    "@web/test-runner": "^1.0.0",
+    "@web/test-runner-playwright": "^1.0.0",
+    "happy-dom": "^21.0.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
   },
   "keywords": [
-    "web-component",
+    "universal-comments",
     "comments",
-    "lit",
+    "comment-section",
+    "comment-box",
+    "comments-widget",
+    "web-component",
+    "web-components",
     "custom-element",
-    "ui",
-    "dark-theme"
+    "lit",
+    "react",
+    "vue",
+    "astro",
+    "nextjs",
+    "svelte",
+    "angular",
+    "emoji-reactions",
+    "dark-theme",
+    "rest",
+    "typescript",
+    "comentarios"
   ],
   "license": "MIT"
 }

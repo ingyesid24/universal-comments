@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>universal-comments — demo local</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 2rem 1rem;
+        background: #0b1422;
+        color: #fff;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      main {
+        max-width: 56rem;
+        margin: 0 auto;
+      }
+      h1 {
+        text-align: center;
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      p {
+        color: rgba(255, 255, 255, 0.6);
+        text-align: center;
+        font-size: 0.875rem;
+        margin-bottom: 2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Demo local de universal-comments</h1>
+      <p>Adaptador en memoria: los cambios no se guardan al recargar.</p>
+      <universal-comments id="demo"></universal-comments>
+    </main>
+    <script type="module">
+      import { UniversalComments } from "./src/universal-comments.ts";
+      import { InMemoryCommentsAdapter } from "./src/adapters/index.ts";
+
+      const el = document.querySelector("#demo");
+      if (!(el instanceof UniversalComments)) {
+        throw new Error("El componente universal-comments no se registró");
+      }
+
+      const adapter = new InMemoryCommentsAdapter({
+        comments: [
+          {
+            id: "demo-1",
+            text: "Comentario de demostración",
+            date: new Date().toISOString(),
+            name: "Ana García",
+            avatar: "",
+            emoji: "👍",
+          },
+        ],
+      });
+
+      el.adapter = adapter;
+      el.author = { name: "Ana García" };
+    </script>
+  </body>
+</html>

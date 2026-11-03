@@ -1,0 +1,286 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Sidebar from "../components/Sidebar.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+---
+
+<BaseLayout title="Adaptadores — universal-comments">
+  <div class="fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-size-[14px_24px]">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.08),transparent_70%)]"></div>
+  </div>
+  <div class="mx-auto max-w-7xl px-6 pt-12 pb-20 flex gap-12">
+    <Sidebar />
+    <article class="min-w-0 flex-1 max-w-3xl">
+      <h1 class="text-3xl font-bold mb-4 inline-block bg-linear-to-r from-white via-brand-blue to-white bg-size-[200%_auto] bg-clip-text text-transparent animate-background-shine">Adaptadores</h1>
+      <p class="text-white/60 mb-8">
+        El componente no incluye backend. Sin adaptador funciona en memoria; con un adaptador, la carga, la publicación, la eliminación y las reacciones se delegan en tu almacenamiento.
+      </p>
+      <p class="text-white/50 text-sm mb-4">
+        Nota de publicación: estas APIs están implementadas en el repositorio; comprueba que la versión instalada desde npm las incluye antes de usarlas en producción.
+      </p>
+      <p class="text-white/50 text-sm mb-8">
+        Si combinas <code class="text-white/80">initialComments</code> con <code class="text-white/80">adapter</code>, la semilla se muestra mientras carga; la respuesta del adaptador reemplaza la lista. La creación es pesimista (solo se muestra y emite <code class="text-white/80">comment-added</code> tras confirmar el servidor).
+      </p>
+
+      <section class="mb-12">
+        <h2 class="text-xl font-semibold mb-3">Contrato <code class="text-white">CommentsAdapter</code></h2>
+        <p class="text-white/60 mb-4">
+          <code class="text-white/80">list</code>, <code class="text-white/80">create</code> y <code class="text-white/80">remove</code> son obligatorios. <code class="text-white/80">react</code> es opcional: si no existe, las reacciones siguen siendo locales.
+        </p>
+        <div class="relative overflow-hidden rounded-xl border border-brand-card p-px backdrop-blur-3xl">
+          <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.3)_0%,transparent_50%,rgba(59,130,246,0.3)_100%)]" />
+          <div class="relative bg-brand-bg rounded-xl">
+            <CodeBlock code={`interface CommentsAdapter {
+  list(query?: CommentQuery): Promise<CommentPage>;
+  create(input: NewCommentInput, options?: AdapterCallOptions): Promise<Comment>;
+  remove(id: string, options?: AdapterCallOptions): Promise<void>;
+  react?(id: string, emoji: string, options?: AdapterCallOptions): Promise<Comment | void>;
+}`} lang="ts" />
+          </div>
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-brand-card mt-4">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-brand-card bg-[#0D1525]">
+                <th class="px-4 py-3 text-left font-medium text-white/60">Tipo</th>
+                <th class="px-4 py-3 text-left font-medium text-white/60">Campos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Comment", "id, text, date, name, avatar, emoji, liked?"],
+                ["CommentAuthor", "name, avatar?"],
+                ["NewCommentInput", "text, author?"],
+                ["CommentQuery", "limit?, cursor?, signal?"],
+                ["CommentPage", "comments, nextCursor?, hasMore?"],
+                ["AdapterCallOptions", "signal?"],
+              ].map(([name, fields]) => (
+                <tr class="border-b border-brand-card last:border-0">
+                  <td class="px-4 py-3 font-mono text-xs text-brand-blue">{name}</td>
+                  <td class="px-4 py-3 text-white/70">{fields}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="text-white/50 text-sm mt-3">
+          Los tipos están disponibles desde la entrada principal: <code class="text-white/80">import type {"{ CommentsAdapter, Comment }"} from "universal-comments";</code>
+        </p>
+        <p class="text-white/50 text-sm mt-2">
+          Paginación: el contrato acepta <code>limit</code>/<code>cursor</code>, pero la UI actual carga la primera página completa y mantiene el botón «Ver más» en cliente. La paginación servidor-side queda fuera de esta versión.
+        </p>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-xl font-semibold mb-3">Adaptador en memoria</h2>
+        <p class="text-white/60 mb-4">
+          Útil para demos, tests y prototipos. <strong class="text-white/80">No persiste datos</strong>: se pierde al recargar la página.
+        </p>
+        <div class="relative overflow-hidden rounded-xl border border-brand-card p-px backdrop-blur-3xl">
+          <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.3)_0%,transparent_50%,rgba(59,130,246,0.3)_100%)]" />
+          <div class="relative bg-brand-bg rounded-xl">
+            <CodeBlock code={`import "universal-comments";
+import { InMemoryCommentsAdapter } from "universal-comments/adapters";
+
+const adapter = new InMemoryCommentsAdapter({
+  comments: [
+    {
+      id: "1",
+      text: "¡Hola!",
+      date: new Date().toISOString(),
+      name: "Ana",
+      avatar: "",
+      emoji: "👍",
+    },
+  ],
+});
+
+const el = document.querySelector("universal-comments");
+el.adapter = adapter;
+el.author = { name: "Ana" };`} lang="js" />
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-xl font-semibold mb-3">Adaptador personalizado</h2>
+        <p class="text-white/60 mb-4">
+          Implementa el contrato con el backend que prefieras. Este ejemplo usa rutas genéricas: adáptalas a tu API real.
+        </p>
+        <CodeBlock code={`const adapter = {
+  async list({ signal } = {}) {
+    const response = await fetch("/api/comments", { signal });
+    if (!response.ok) throw new Error("No se pudo cargar");
+    return { comments: await response.json() };
+  },
+
+  async create({ text, author }, { signal } = {}) {
+    const response = await fetch("/api/comments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, author }),
+      signal,
+    });
+    if (!response.ok) throw new Error("No se pudo publicar");
+    return response.json();
+  },
+
+  async remove(id, { signal } = {}) {
+    const response = await fetch("/api/comments/" + id, {
+      method: "DELETE",
+      signal,
+    });
+    if (!response.ok) throw new Error("No se pudo eliminar");
+  },
+
+  async react(id, emoji, { signal } = {}) {
+    const response = await fetch("/api/comments/" + id + "/reactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emoji }),
+      signal,
+    });
+    if (!response.ok) throw new Error("No se pudo reaccionar");
+    return response.json();
+  },
+};
+
+document.querySelector("universal-comments").adapter = adapter;`} lang="js" />
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-xl font-semibold mb-3">Adaptador REST configurable</h2>
+        <p class="text-white/60 mb-4">
+          <code class="text-white/80">createRestCommentsAdapter</code> no supone endpoints, esquemas ni autenticación. Todo se configura explícitamente:
+        </p>
+        <CodeBlock code={`import type { Comment } from "universal-comments";
+import { createRestCommentsAdapter } from "universal-comments/adapters";
+
+declare function getToken(): Promise<string>;
+
+const adapter = createRestCommentsAdapter({
+  urls: {
+    list: "/api/comments",
+    create: "/api/comments",
+    remove: (id) => "/api/comments/" + id,
+    react: (id) => "/api/comments/" + id + "/reactions", // opcional
+  },
+  headers: async () => ({
+    Authorization: "Bearer " + (await getToken()),
+  }),
+  parseList: (data) => ({
+    comments: (data as { data: Comment[] }).data,
+  }),
+  parseComment: (data) => (data as { data: Comment }).data,
+  parseError: (data) => ({
+    message: (data as { error?: string }).error ?? "Error del servidor",
+  }),
+  timeoutMs: 10_000,
+  treatNotFoundAsSuccess: false,
+});`} lang="ts" />
+        <div class="overflow-x-auto rounded-xl border border-brand-card mt-4">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-brand-card bg-[#0D1525]">
+                <th class="px-4 py-3 text-left font-medium text-white/60">Opción</th>
+                <th class="px-4 py-3 text-left font-medium text-white/60">Descripción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["urls.list", "String o función (query) => string. Con string se añaden limit y cursor."],
+                ["urls.create", "String o función () => string."],
+                ["urls.remove", "Función (id) => string. Obligatoria."],
+                ["urls.react", "Función (id) => string. Si falta, no se publica el método react."],
+                ["headers", "HeadersInit o función (puede ser async) evaluada en cada petición."],
+                ["fetch", "Implementación alternativa de fetch (tests, proxies o SSR)."],
+                ["parseList / parseComment / parseError", "Parsers opcionales para adaptar tu esquema."],
+                ["serializeCreate / serializeReaction", "Serializadores opcionales del cuerpo JSON."],
+                ["timeoutMs", "Timeout opcional por petición. Al expirar se produce code: timeout."],
+                ["treatNotFoundAsSuccess", "Por defecto un 404 en DELETE es error. Actívalo solo con borrado idempotente."],
+              ].map(([option, description]) => (
+                <tr class="border-b border-brand-card last:border-0">
+                  <td class="px-4 py-3 font-mono text-xs text-brand-blue">{option}</td>
+                  <td class="px-4 py-3 text-white/70">{description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="text-white/50 text-sm mt-3">
+          Contrato por defecto, siempre sobrescribible: <code>GET list</code> devuelve <code>Comment[]</code> o <code>{"{ comments: [] }"}</code>; <code>POST create</code> envía <code>{"{ text, author? }"}</code>; <code>POST react</code> envía <code>{"{ emoji }"}</code>; un <code>404</code> en <code>DELETE</code> es un error salvo que actives <code>treatNotFoundAsSuccess</code>. Los elementos de listado y creación deben incluir <code>id</code> y <code>text</code>; si faltan, el adaptador rechaza la respuesta.
+        </p>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-xl font-semibold mb-3">Errores y estados</h2>
+        <p class="text-white/60 mb-4">
+          El componente muestra estados accesibles de carga, vacío y error, y nunca emite <code class="text-white/80">comment-added</code> si la publicación falla. La creación es pesimista. La eliminación muestra un estado pendiente y revierte si falla; la reacción es optimista y revierte si falla. Las reacciones por comentario se serializan para evitar respuestas fuera de orden.
+        </p>
+        <CodeBlock code={`el.addEventListener("comments-error", (event) => {
+  const { operation, error } = event.detail;
+  console.error(operation, error.code, error.status, error.message);
+});
+
+el.addEventListener("comment-added", (event) => {
+  console.log("Confirmado por el backend:", event.detail.comment);
+});`} lang="js" />
+        <p class="text-white/60 mt-3">
+          Los errores se normalizan como <code class="text-white/80">CommentsAdapterError</code> con <code>code</code> (<code>network</code>, <code>unauthorized</code>, <code>forbidden</code>, <code>not-found</code>, <code>conflict</code>, <code>validation</code>, <code>rate-limited</code>, <code>timeout</code>, <code>server</code>, <code>aborted</code>, <code>unknown</code>), <code>status?</code> y <code>retryable</code>. No hay reintentos automáticos. Usa <code class="text-white/80">isCommentsAdapterError()</code> para reconocer errores entre la entrada principal y el subpath de adaptadores.
+        </p>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-xl font-semibold mb-3">TypeScript</h2>
+        <p class="text-white/60 mb-4">
+          El paquete incluye declaraciones para la entrada principal y para <code class="text-white/80">universal-comments/adapters</code>. Usa una resolución moderna:
+        </p>
+        <CodeBlock code={`{
+  "compilerOptions": {
+    "target": "ES2021",
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  }
+}`} lang="json" />
+        <p class="text-white/50 text-sm mt-3">
+          También funciona con <code class="text-white/80">moduleResolution: "node16"</code> en proyectos ESM. La entrada principal requiere DOM; <code class="text-white/80">universal-comments/adapters</code> puede importarse sin DOM. Para consumidores CommonJS, el runtime <code class="text-white/80">require</code> está disponible, pero la resolución de tipos de Node16 puede requerir un proyecto ESM o <code class="text-white/80">bundler</code>.
+        </p>
+      </section>
+
+      <section class="mb-12">
+        <h2 class="text-xl font-semibold mb-3">Responsabilidades del backend</h2>
+        <div class="overflow-x-auto rounded-xl border border-brand-card">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-brand-card bg-[#0D1525]">
+                <th class="px-4 py-3 text-left font-medium text-white/60">Área</th>
+                <th class="px-4 py-3 text-left font-medium text-white/60">Responsabilidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ["Autenticación", "Identificar al autor real; no confiar en name/avatar enviados por el cliente."],
+                ["Autorización", "Decidir quién puede borrar o reaccionar; el componente solo oculta o deshabilita botones."],
+                ["Validación", "Repetir la validación de longitud y contenido en el servidor."],
+                ["Moderación", "Aprobar, ocultar o rechazar comentarios antes de servirlos."],
+                ["Rate limiting", "Limitar publicaciones por usuario/IP; el debounce del cliente es solo UX."],
+                ["CSRF / CORS", "Configurar credenciales, origen permitido y protección CSRF en la API."],
+                ["Persistencia", "Guardar y devolver el comentario confirmado, con su id definitivo."],
+                ["Errores", "Responder estados HTTP correctos para que el adaptador los normalice."],
+              ].map(([area, responsibility]) => (
+                <tr class="border-b border-brand-card last:border-0">
+                  <td class="px-4 py-3 font-mono text-xs text-brand-blue">{area}</td>
+                  <td class="px-4 py-3 text-white/70">{responsibility}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="text-white/50 text-sm mt-4">
+          Seguridad: el texto se interpola como texto (Lit lo escapa) y los avatares se validan, pero el componente no es una barrera de seguridad. No incluyas claves privadas en el bundle; usa cabeceras en tiempo de ejecución o un proxy del servidor.
+        </p>
+      </section>
+    </article>
+  </div>
+</BaseLayout>

@@ -1,17 +1,20 @@
 ---
 // docs/src/components/Sidebar.astro
+import { ISSUES_URL, SPONSOR_URL } from "../site";
 const links = [
   { href: "/guia-rapida", label: "Guía rápida", external: false },
+  { href: "/adaptadores", label: "Adaptadores", external: false },
   { href: "/api", label: "API / Props", external: false },
   { href: "/ejemplos", label: "Ejemplos", external: false },
   { href: "/contribuir", label: "Contribuir", external: false },
-  { href: "https://github.com/ingyesid24/universal-comments/issues/new", label: "🐛 Reportar bug", external: true },
+  { href: ISSUES_URL, label: "🐛 Reportar bug", external: true },
+  { href: SPONSOR_URL, label: "♥ Patrocinar", external: true },
 ];
 ---
 
 <aside class="hidden lg:block w-64 shrink-0">
-  <nav class="sticky top-20 space-y-1 border-l border-[#111C2D] pl-4">
-    <div class="mb-2 border-t border-[#111C2D] pt-3"></div>
+  <nav class="sticky top-20 space-y-1 border-l border-brand-card pl-4">
+    <div class="mb-2 border-t border-brand-card pt-3"></div>
     {links.map((link) => (
       <a
         href={link.href}

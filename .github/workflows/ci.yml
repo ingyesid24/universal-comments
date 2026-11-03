@@ -13,12 +13,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: node scripts/smoke.mjs
+      - run: npm run test:types
+      - run: node scripts/package-contract.mjs
+      - run: node scripts/cjs-contract.cjs
 
   package-managers:
     runs-on: ubuntu-latest
@@ -26,31 +31,47 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - run: npm ci
       - run: npm run build
-      - run: npm pack
+      - run: npm pack --pack-destination "$RUNNER_TEMP"
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
       - name: Install tarball with pnpm and smoke test
         run: |
+          TARBALL=$(ls "$RUNNER_TEMP"/universal-comments-*.tgz)
           mkdir -p /tmp/smoke-pnpm && cd /tmp/smoke-pnpm
           pnpm init > /dev/null
-          pnpm add /home/runner/work/components-comentarios/components-comentarios/universal-comments-*.tgz
+          pnpm add "$TARBALL"
           pnpm add -D happy-dom
-          cp /home/runner/work/components-comentarios/components-comentarios/scripts/smoke.mjs .
+          cp "$GITHUB_WORKSPACE/scripts/smoke.mjs" .
           node smoke.mjs
           node -e "require.resolve('universal-comments')"
+          node -e "require.resolve('universal-comments/adapters')"
           node --input-type=module -e "import.meta.resolve('universal-comments')"
+          node --input-type=module -e "import.meta.resolve('universal-comments/adapters')"
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
       - name: Install tarball with Bun and smoke test
         run: |
+          TARBALL=$(ls "$RUNNER_TEMP"/universal-comments-*.tgz)
           mkdir -p /tmp/smoke-bun && cd /tmp/smoke-bun
           bun init -y > /dev/null 2>&1
-          bun add /home/runner/work/components-comentarios/components-comentarios/universal-comments-*.tgz
+          bun add "$TARBALL"
           bun add -d happy-dom
-          cp /home/runner/work/components-comentarios/components-comentarios/scripts/smoke.mjs .
+          cp "$GITHUB_WORKSPACE/scripts/smoke.mjs" .
           bun smoke.mjs
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: cd docs && npm ci && npm run build
