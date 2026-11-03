@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 dist
+demo-dist
 dist-types
 dist-ssr
 *.local
@@ -24,3 +25,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local tooling
+/.astro
+.claude/
+/promo

@@ -10,9 +10,9 @@ export interface Props {
 const { maxComments = 4, placeholder = "Prueba el componente...", theme = "dark" } = Astro.props;
 ---
 
-<div class="relative my-8 rounded-2xl overflow-hidden border border-[#111C2D]">
+<div class="relative my-8 rounded-2xl overflow-hidden border border-brand-card">
   <div class="pointer-events-none absolute top-0 left-0 right-0 flex justify-center">
-    <div class="h-[1px] animate-border-width rounded-full bg-gradient-to-r from-[rgba(17,17,17,0)] via-[#3b82f6] to-[rgba(17,17,17,0)]"></div>
+    <div class="h-px animate-border-width rounded-full bg-linear-to-r from-[rgba(17,17,17,0)] via-brand-blue to-[rgba(17,17,17,0)]"></div>
   </div>
   <universal-comments
     max-comments={maxComments}

@@ -14,20 +14,20 @@ const props = [
 
 <BaseLayout title="API / Props — universal-comments">
   <div class="fixed inset-0 pointer-events-none overflow-hidden">
-    <div class="absolute -top-40 -left-40 w-96 h-96 bg-[#3b82f6] opacity-[0.08] rounded-full blur-3xl animate-glow-pulse"></div>
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-brand-blue opacity-[0.08] rounded-full blur-3xl animate-glow-pulse"></div>
     <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-[#8878e6] opacity-[0.06] rounded-full blur-3xl animate-glow-pulse" style="animation-delay: -3s; animation-direction: reverse;"></div>
   </div>
   <div class="mx-auto max-w-7xl px-6 pt-12 pb-20 flex gap-12">
     <Sidebar />
     <article class="min-w-0 flex-1 max-w-3xl">
-      <h1 class="text-3xl font-bold mb-2 inline-block bg-gradient-to-r from-white via-[#3b82f6] to-white bg-[length:200%_auto] bg-clip-text text-transparent animate-background-shine">API / Props</h1>
+      <h1 class="text-3xl font-bold mb-2 inline-block bg-linear-to-r from-white via-brand-blue to-white bg-size-[200%_auto] bg-clip-text text-transparent animate-background-shine">API / Props</h1>
       <p class="text-white/50 mb-8">Atributos HTML y propiedades JavaScript del componente.</p>
 
       <h2 class="text-xl font-semibold mb-4">Atributos HTML</h2>
-      <div class="overflow-x-auto rounded-xl border border-[#111C2D]">
+      <div class="overflow-x-auto rounded-xl border border-brand-card">
         <table class="w-full text-sm">
           <thead>
-            <tr class="border-b border-[#111C2D] bg-[#0D1525]">
+            <tr class="border-b border-brand-card bg-[#0D1525]">
               <th class="px-4 py-3 text-left font-medium text-white/60">Atributo</th>
               <th class="px-4 py-3 text-left font-medium text-white/60">Propiedad</th>
               <th class="px-4 py-3 text-left font-medium text-white/60">Tipo</th>
@@ -37,8 +37,8 @@ const props = [
           </thead>
           <tbody>
             {props.map((p) => (
-              <tr class="border-b border-[#111C2D] last:border-0">
-                <td class="px-4 py-3 font-mono text-xs text-[#3b82f6]">{p.attr}</td>
+              <tr class="border-b border-brand-card last:border-0">
+                <td class="px-4 py-3 font-mono text-xs text-brand-blue">{p.attr}</td>
                 <td class="px-4 py-3 font-mono text-xs text-white/80">{p.prop}</td>
                 <td class="px-4 py-3 font-mono text-xs text-white/50">{p.type}</td>
                 <td class="px-4 py-3 font-mono text-xs text-white/50">{p.default}</td>
@@ -50,22 +50,70 @@ const props = [
       </div>
 
       <h2 class="text-xl font-semibold mt-10 mb-4">Propiedades JavaScript</h2>
-      <p class="text-white/60 mb-4">Además de los atributos HTML, puedes asignar propiedades directamente desde JavaScript:</p>
+      <p class="text-white/60 mb-4">Además de los atributos HTML, puedes asignar propiedades directamente desde JavaScript. Los objetos y funciones no se configuran como atributos:</p>
 
-      <div class="relative overflow-hidden rounded-xl border border-[#111C2D] p-[1px] backdrop-blur-3xl">
+      <div class="overflow-x-auto rounded-xl border border-brand-card mb-6">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-brand-card bg-[#0D1525]">
+              <th class="px-4 py-3 text-left font-medium text-white/60">Propiedad</th>
+              <th class="px-4 py-3 text-left font-medium text-white/60">Tipo</th>
+              <th class="px-4 py-3 text-left font-medium text-white/60">Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              ["initialComments", "Comment[]", "Comentarios iniciales o semilla."],
+              ["adapter", "CommentsAdapter | null", "Almacenamiento externo. Al asignarlo se cargan los comentarios."],
+              ["author", "{ name: string; avatar?: string }", "Autor usado al publicar. El backend debe validar la identidad."],
+              ["messages", "Partial<CommentsMessages>", "Textos de la interfaz. Por defecto, español."],
+              ["reload()", "Promise<void>", "Recarga desde el adaptador configurado."],
+            ].map(([prop, type, desc]) => (
+              <tr class="border-b border-brand-card last:border-0">
+                <td class="px-4 py-3 font-mono text-xs text-brand-blue">{prop}</td>
+                <td class="px-4 py-3 font-mono text-xs text-white/50">{type}</td>
+                <td class="px-4 py-3 text-white/70">{desc}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="relative overflow-hidden rounded-xl border border-brand-card p-px backdrop-blur-3xl">
         <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.3)_0%,transparent_50%,rgba(59,130,246,0.3)_100%)]" />
-        <div class="relative bg-[#0B1422] rounded-xl">
+        <div class="relative bg-brand-bg rounded-xl">
           <CodeBlock code={`const el = document.querySelector("universal-comments");
 
 el.maxcomments = 9;
 el.placeholder = "Tu opinión nos importa...";
 el.theme = "light";
-el.charlimit = 300;`} lang="js" />
+el.charlimit = 300;
+el.author = { name: "Ana García" };`} lang="js" />
         </div>
       </div>
 
+      <h3 class="text-lg font-semibold mt-8 mb-2">adapter</h3>
+      <p class="text-white/60 mb-4">Conecta un almacenamiento propio (memoria, REST o personalizado). Consulta la <a class="text-brand-blue" href="/adaptadores">guía de adaptadores</a>.</p>
+      <CodeBlock code={`import { InMemoryCommentsAdapter } from "universal-comments/adapters";
+
+const el = document.querySelector("universal-comments");
+el.adapter = new InMemoryCommentsAdapter({ comments: [] });`} lang="js" />
+
+      <h3 class="text-lg font-semibold mt-8 mb-2">messages</h3>
+      <p class="text-white/60 mb-4">Sobrescribe los textos que necesites; el resto conserva los valores por defecto:</p>
+      <CodeBlock code={`el.messages = {
+  title: "Opiniones",
+  empty: "Todavía no hay comentarios",
+  submit: "Enviar",
+  submitting: "Enviando...",
+  // Fecha relativa de cada comentario (por defecto en español: "hace 5 minutos")
+  timeAgo: (date) =>
+    new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
+      Math.round((new Date(date) - Date.now()) / 60000), "minute"),
+};`} lang="js" />
+
       <h3 class="text-lg font-semibold mt-8 mb-2">initialComments</h3>
-      <p class="text-white/60 mb-4">Para inicializar con comentarios existentes (útil para SSR o hydration):</p>
+      <p class="text-white/60 mb-4">Para inicializar con comentarios existentes durante la hidratación en cliente. La propiedad se conserva aunque se asigne antes del upgrade; importar primero el componente sigue siendo el patrón recomendado:</p>
       <CodeBlock code={`el.initialComments = [
   {
     id: "1",
@@ -78,9 +126,9 @@ el.charlimit = 300;`} lang="js" />
 ];`} lang="js" />
 
       <h3 class="text-lg font-semibold mt-8 mb-2">Interfaz Comment</h3>
-      <div class="relative overflow-hidden rounded-xl border border-[#111C2D] p-[1px] backdrop-blur-3xl">
+      <div class="relative overflow-hidden rounded-xl border border-brand-card p-px backdrop-blur-3xl">
         <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(136,120,230,0.3)_0%,transparent_50%,rgba(136,120,230,0.3)_100%)]" />
-        <div class="relative bg-[#0B1422] rounded-xl">
+        <div class="relative bg-brand-bg rounded-xl">
           <CodeBlock code={`interface Comment {
   id: string;
   text: string;
@@ -95,32 +143,66 @@ el.charlimit = 300;`} lang="js" />
 
       <h2 class="text-xl font-semibold mt-10 mb-4">Eventos</h2>
       <p class="text-white/60 mb-4">El componente dispatchea eventos personalizados que puedes escuchar:</p>
-      <div class="relative overflow-x-auto rounded-xl border border-[#111C2D]">
+      <div class="relative overflow-x-auto rounded-xl border border-brand-card">
         <div class="pointer-events-none absolute top-0 left-0 right-0 flex justify-center">
-          <div class="h-[1px] animate-border-width rounded-full bg-gradient-to-r from-[rgba(17,17,17,0)] via-[#3b82f6] to-[rgba(17,17,17,0)]"></div>
+          <div class="h-px animate-border-width rounded-full bg-linear-to-r from-[rgba(17,17,17,0)] via-brand-blue to-[rgba(17,17,17,0)]"></div>
         </div>
         <table class="w-full text-sm">
           <thead>
-            <tr class="border-b border-[#111C2D] bg-[#0D1525]">
+            <tr class="border-b border-brand-card bg-[#0D1525]">
               <th class="px-4 py-3 text-left font-medium text-white/60">Evento</th>
               <th class="px-4 py-3 text-left font-medium text-white/60">Detalle</th>
               <th class="px-4 py-3 text-left font-medium text-white/60">Descripción</th>
             </tr>
           </thead>
           <tbody>
-            <tr class="border-b border-[#111C2D]">
-              <td class="px-4 py-3 font-mono text-xs text-[#3b82f6]">comment-added</td>
+            <tr class="border-b border-brand-card">
+              <td class="px-4 py-3 font-mono text-xs text-brand-blue">comment-added</td>
               <td class="px-4 py-3 font-mono text-xs text-white/50"><code>{"{ comment: Comment }"}</code></td>
-              <td class="px-4 py-3 text-white/70">Se dispara cuando se agrega un comentario.</td>
+              <td class="px-4 py-3 text-white/70">Se dispara tras confirmar la creación (con adaptador) o inmediatamente en modo local.</td>
             </tr>
-            <tr class="border-b border-[#111C2D]">
-              <td class="px-4 py-3 font-mono text-xs text-[#3b82f6]">comment-deleted</td>
+            <tr class="border-b border-brand-card">
+              <td class="px-4 py-3 font-mono text-xs text-brand-blue">comment-deleted</td>
               <td class="px-4 py-3 font-mono text-xs text-white/50"><code>{"{ commentId: string }"}</code></td>
-              <td class="px-4 py-3 text-white/70">Se dispara cuando se elimina un comentario.</td>
+              <td class="px-4 py-3 text-white/70">Se dispara tras confirmar y animar la eliminación.</td>
+            </tr>
+            <tr class="border-b border-brand-card">
+              <td class="px-4 py-3 font-mono text-xs text-brand-blue">comments-loaded</td>
+              <td class="px-4 py-3 font-mono text-xs text-white/50"><code>{"{ comments: Comment[] }"}</code></td>
+              <td class="px-4 py-3 text-white/70">El adaptador terminó de cargar los comentarios.</td>
+            </tr>
+            <tr class="border-b border-brand-card">
+              <td class="px-4 py-3 font-mono text-xs text-brand-blue">comments-error</td>
+              <td class="px-4 py-3 font-mono text-xs text-white/50"><code>{"{ operation, error, commentId? }"}</code></td>
+              <td class="px-4 py-3 text-white/70">Falló una operación del adaptador. <code>error</code> es <code>CommentsAdapterError</code>.</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-3 font-mono text-xs text-brand-blue">comment-reaction-changed</td>
+              <td class="px-4 py-3 font-mono text-xs text-white/50"><code>{"{ commentId, emoji }"}</code></td>
+              <td class="px-4 py-3 text-white/70">La reacción se persistió correctamente.</td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <h2 class="text-xl font-semibold mt-10 mb-4">Variables CSS y Shadow Parts</h2>
+      <p class="text-white/60 mb-3">Personaliza sin romper el diseño base:</p>
+      <CodeBlock code={`universal-comments {
+  --uc-accent: #3b82f6;
+  --uc-accent-strong: #2563eb;
+  --uc-accent-strong-hover: #1d4ed8;
+  --uc-error: #ef4444;       /* tema oscuro */
+  --uc-error-light: #dc2626; /* tema claro */
+  --uc-radius: 1rem;
+}`} lang="css" />
+      <p class="text-white/60 mb-2"><strong class="text-white/80">Parts:</strong> <code>container</code>, <code>title</code>, <code>textarea</code>, <code>char-count</code>, <code>submit</code>, <code>emoji-button</code>, <code>comment-card</code>, <code>avatar</code>, <code>name</code>, <code>time</code>, <code>text</code>, <code>reaction</code>, <code>delete</code>, <code>show-more</code>, <code>empty</code>, <code>error</code>, <code>retry</code>.</p>
+      <CodeBlock code={`universal-comments::part(comment-card) {
+  border-radius: 0.5rem;
+}`} lang="css" />
+
+      <h2 class="text-xl font-semibold mt-10 mb-4">Errores y responsabilidades del backend</h2>
+      <p class="text-white/60 mb-2">El componente no reintenta automáticamente y no es un mecanismo de autorización. El backend debe validar y autorizar cada operación.</p>
+      <p class="text-white/60">Los errores de almacenamiento se normalizan con <code>CommentsAdapterError</code> (<code>code</code>, <code>status?</code>, <code>retryable</code>). Códigos: <code>network</code>, <code>unauthorized</code>, <code>forbidden</code>, <code>not-found</code>, <code>conflict</code>, <code>validation</code>, <code>rate-limited</code>, <code>timeout</code>, <code>server</code>, <code>aborted</code>, <code>unknown</code>. Consulta la <a class="text-brand-blue" href="/adaptadores">guía de adaptadores</a> para el contrato completo.</p>
     </article>
   </div>
 </BaseLayout>

@@ -1,0 +1,37 @@
+name: Release
+
+# Publica en npm al crear un Release en GitHub (p. ej. tag v0.1.1).
+# Usa "Trusted Publishing" de npm (OIDC): no hace falta guardar un token.
+# Configúralo una vez en npmjs.com → universal-comments → Settings →
+# Trusted Publisher → GitHub Actions (ingyesid24/universal-comments, release.yml).
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck
+      - run: npm test
+      - name: Check tag matches package.json version
+        run: |
+          PKG="v$(node -p "require('./package.json').version")"
+          if [ "$PKG" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $PKG" >&2
+            exit 1
+          fi
+      - run: npm publish --provenance --access public

@@ -3,19 +3,20 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import Sidebar from "../components/Sidebar.astro";
 import CodeBlock from "../components/CodeBlock.astro";
 import DemoEmbed from "../components/DemoEmbed.astro";
+import { CDN_URL } from "../site";
 ---
 
 <BaseLayout title="Ejemplos — universal-comments">
-  <div class="fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px]">
+  <div class="fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-size-[14px_24px]">
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.08),transparent_70%)]"></div>
   </div>
   <div class="mx-auto max-w-7xl px-6 pt-12 pb-20 flex gap-12">
     <Sidebar />
     <article class="min-w-0 flex-1 max-w-3xl">
-      <h1 class="text-3xl font-bold mb-8 inline-block bg-gradient-to-r from-white via-[#3b82f6] to-white bg-[length:200%_auto] bg-clip-text text-transparent animate-background-shine">Ejemplos</h1>
+      <h1 class="text-3xl font-bold mb-8 inline-block bg-linear-to-r from-white via-brand-blue to-white bg-size-[200%_auto] bg-clip-text text-transparent animate-background-shine">Ejemplos</h1>
 
       <section class="mb-12">
-        <h2 class="relative inline-flex overflow-hidden rounded-lg p-[1px] mb-2">
+        <h2 class="relative inline-flex overflow-hidden rounded-lg p-px mb-2">
           <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,transparent_50%,rgba(59,130,246,0.4)_100%)]" />
           <span class="relative inline-flex items-center rounded-lg bg-[#0D1525] px-3 py-1 text-sm font-semibold text-white backdrop-blur-3xl">
             Uso básico
@@ -23,7 +24,7 @@ import DemoEmbed from "../components/DemoEmbed.astro";
         </h2>
         <p class="text-white/50 text-sm mb-4">El componente sin ningún atributo usa valores por defecto.</p>
         <CodeBlock code={`<universal-comments></universal-comments>`} lang="html" />
-        <div class="spotlight-card relative overflow-hidden rounded-2xl border border-[#111C2D] bg-[#0D1525] p-2" data-spotlight>
+        <div class="spotlight-card relative overflow-hidden rounded-2xl border border-brand-card bg-[#0D1525] p-2" data-spotlight>
           <div class="pointer-events-none absolute -inset-px opacity-0 transition duration-300" data-spotlight-effect></div>
           <div class="relative z-10">
             <DemoEmbed maxComments={3} placeholder="Escribe algo..." />
@@ -32,7 +33,7 @@ import DemoEmbed from "../components/DemoEmbed.astro";
       </section>
 
       <section class="mb-12">
-        <h2 class="relative inline-flex overflow-hidden rounded-lg p-[1px] mb-2">
+        <h2 class="relative inline-flex overflow-hidden rounded-lg p-px mb-2">
           <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,transparent_50%,rgba(59,130,246,0.4)_100%)]" />
           <span class="relative inline-flex items-center rounded-lg bg-[#0D1525] px-3 py-1 text-sm font-semibold text-white backdrop-blur-3xl">
             Tema claro
@@ -40,7 +41,7 @@ import DemoEmbed from "../components/DemoEmbed.astro";
         </h2>
         <p class="text-white/50 text-sm mb-4">Cambia el fondo a blanco con <code class="text-white">theme="light"</code>.</p>
         <CodeBlock code={`<universal-comments theme="light"></universal-comments>`} lang="html" />
-        <div class="spotlight-card relative overflow-hidden rounded-2xl border border-[#111C2D] bg-[#0D1525] p-2" data-spotlight>
+        <div class="spotlight-card relative overflow-hidden rounded-2xl border border-brand-card bg-[#0D1525] p-2" data-spotlight>
           <div class="pointer-events-none absolute -inset-px opacity-0 transition duration-300" data-spotlight-effect></div>
           <div class="relative z-10">
             <DemoEmbed theme="light" maxComments={3} />
@@ -49,7 +50,7 @@ import DemoEmbed from "../components/DemoEmbed.astro";
       </section>
 
       <section class="mb-12">
-        <h2 class="relative inline-flex overflow-hidden rounded-lg p-[1px] mb-2">
+        <h2 class="relative inline-flex overflow-hidden rounded-lg p-px mb-2">
           <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,transparent_50%,rgba(59,130,246,0.4)_100%)]" />
           <span class="relative inline-flex items-center rounded-lg bg-[#0D1525] px-3 py-1 text-sm font-semibold text-white backdrop-blur-3xl">
             Máximo personalizado
@@ -60,7 +61,7 @@ import DemoEmbed from "../components/DemoEmbed.astro";
       </section>
 
       <section class="mb-12">
-        <h2 class="relative inline-flex overflow-hidden rounded-lg p-[1px] mb-2">
+        <h2 class="relative inline-flex overflow-hidden rounded-lg p-px mb-2">
           <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,transparent_50%,rgba(59,130,246,0.4)_100%)]" />
           <span class="relative inline-flex items-center rounded-lg bg-[#0D1525] px-3 py-1 text-sm font-semibold text-white backdrop-blur-3xl">
             Límite de caracteres
@@ -71,7 +72,7 @@ import DemoEmbed from "../components/DemoEmbed.astro";
       </section>
 
       <section class="mb-12">
-        <h2 class="relative inline-flex overflow-hidden rounded-lg p-[1px] mb-2">
+        <h2 class="relative inline-flex overflow-hidden rounded-lg p-px mb-2">
           <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,transparent_50%,rgba(59,130,246,0.4)_100%)]" />
           <span class="relative inline-flex items-center rounded-lg bg-[#0D1525] px-3 py-1 text-sm font-semibold text-white backdrop-blur-3xl">
             Con datos iniciales
@@ -102,7 +103,76 @@ import DemoEmbed from "../components/DemoEmbed.astro";
       </section>
 
       <section class="mb-12">
-        <h2 class="relative inline-flex overflow-hidden rounded-lg p-[1px] mb-2">
+        <h2 class="relative inline-flex overflow-hidden rounded-lg p-px mb-2">
+          <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,transparent_50%,rgba(59,130,246,0.4)_100%)]" />
+          <span class="relative inline-flex items-center rounded-lg bg-[#0D1525] px-3 py-1 text-sm font-semibold text-white backdrop-blur-3xl">
+            Adaptador en memoria
+          </span>
+        </h2>
+        <p class="text-white/50 text-sm mb-4">Para demos y tests. No persiste datos entre recargas.</p>
+        <CodeBlock code={`import { InMemoryCommentsAdapter } from "universal-comments/adapters";
+
+const adapter = new InMemoryCommentsAdapter({
+  comments: [
+    {
+      id: "demo-1",
+      text: "Comentario de demostración",
+      date: new Date().toISOString(),
+      name: "Ana García",
+      avatar: "",
+      emoji: "👍"
+    }
+  ]
+});
+
+const el = document.querySelector("universal-comments");
+el.adapter = adapter;
+el.author = { name: "Ana García" };`} lang="js" />
+      </section>
+
+      <section class="mb-12">
+        <h2 class="relative inline-flex overflow-hidden rounded-lg p-px mb-2">
+          <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,transparent_50%,rgba(59,130,246,0.4)_100%)]" />
+          <span class="relative inline-flex items-center rounded-lg bg-[#0D1525] px-3 py-1 text-sm font-semibold text-white backdrop-blur-3xl">
+            Adaptador REST configurable
+          </span>
+        </h2>
+        <p class="text-white/50 text-sm mb-4">
+          Define tus URLs y cabeceras. El adaptador no asume endpoints ni autenticación. Las rutas del ejemplo son genéricas.
+        </p>
+        <CodeBlock code={`import { createRestCommentsAdapter } from "universal-comments/adapters";
+
+const el = document.querySelector("universal-comments");
+el.adapter = createRestCommentsAdapter({
+  urls: {
+    list: "/api/comments",
+    create: "/api/comments",
+    remove: (id) => "/api/comments/" + id,
+    react: (id) => "/api/comments/" + id + "/reactions" // opcional
+  },
+  headers: async () => ({ Authorization: "Bearer " + (await getToken()) })
+});`} lang="js" />
+      </section>
+
+      <section class="mb-12">
+        <h2 class="relative inline-flex overflow-hidden rounded-lg p-px mb-2">
+          <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,transparent_50%,rgba(59,130,246,0.4)_100%)]" />
+          <span class="relative inline-flex items-center rounded-lg bg-[#0D1525] px-3 py-1 text-sm font-semibold text-white backdrop-blur-3xl">
+            Textos personalizados
+          </span>
+        </h2>
+        <p class="text-white/50 text-sm mb-4">Sobrescribe solo los mensajes que necesites.</p>
+        <CodeBlock code={`const el = document.querySelector("universal-comments");
+el.messages = {
+  title: "Opiniones",
+  empty: "Todavía no hay comentarios",
+  submit: "Enviar",
+  submitting: "Enviando..."
+};`} lang="js" />
+      </section>
+
+      <section class="mb-12">
+        <h2 class="relative inline-flex overflow-hidden rounded-lg p-px mb-2">
           <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,transparent_50%,rgba(59,130,246,0.4)_100%)]" />
           <span class="relative inline-flex items-center rounded-lg bg-[#0D1525] px-3 py-1 text-sm font-semibold text-white backdrop-blur-3xl">
             Todas las props combinadas
@@ -117,16 +187,16 @@ import DemoEmbed from "../components/DemoEmbed.astro";
       </section>
 
       <section>
-        <h2 class="relative inline-flex overflow-hidden rounded-lg p-[1px] mb-2">
+        <h2 class="relative inline-flex overflow-hidden rounded-lg p-px mb-2">
           <span class="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.4)_0%,transparent_50%,rgba(59,130,246,0.4)_100%)]" />
           <span class="relative inline-flex items-center rounded-lg bg-[#0D1525] px-3 py-1 text-sm font-semibold text-white backdrop-blur-3xl">
-            CDN vía unpkg
+            CDN (sin npm)
           </span>
         </h2>
-        <p class="text-white/50 text-sm mb-4">Para usar sin npm, carga desde unpkg.com.</p>
-        <div class="relative rounded-2xl border border-[#111C2D] bg-[#0D1525] overflow-hidden">
+        <p class="text-white/50 text-sm mb-4">Para usar sin npm ni build: una página HTML completa lista para copiar.</p>
+        <div class="relative rounded-2xl border border-brand-card bg-[#0D1525] overflow-hidden">
           <div class="pointer-events-none absolute top-0 left-0 right-0 flex justify-center">
-            <div class="h-[1px] animate-border-width rounded-full bg-gradient-to-r from-[rgba(17,17,17,0)] via-[#3b82f6] to-[rgba(17,17,17,0)]"></div>
+            <div class="h-px animate-border-width rounded-full bg-linear-to-r from-[rgba(17,17,17,0)] via-brand-blue to-[rgba(17,17,17,0)]"></div>
           </div>
           <div class="p-4">
             <CodeBlock code={`<!DOCTYPE html>
@@ -134,7 +204,7 @@ import DemoEmbed from "../components/DemoEmbed.astro";
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Comentarios</title>
+  <title>Mi sitio con universal-comments</title>
 </head>
 <body>
   <h1>Mi sitio</h1>
@@ -142,8 +212,8 @@ import DemoEmbed from "../components/DemoEmbed.astro";
     max-comments="9"
     placeholder="Deja tu comentario..."
     theme="dark"
-  />
-  <script src="https://unpkg.com/universal-comments@0.1.0"></script>
+  ></universal-comments>
+  <script type="module" src="${CDN_URL}"></script>
 </body>
 </html>`} lang="html" />
           </div>

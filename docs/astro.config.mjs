@@ -1,8 +1,15 @@
 import { defineConfig } from "astro/config";
-import tailwind from "@astrojs/tailwind";
+import tailwindcss from "@tailwindcss/vite";
+import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
-  integrations: [tailwind()],
+  site: "https://components-comentarios.vercel.app",
+  integrations: [sitemap()],
+  vite: {
+    plugins: [tailwindcss()],
+  },
+  // Astro 7 elimina los espacios entre texto y enlaces al comprimir el HTML.
+  compressHTML: false,
   output: "static",
   outDir: "dist",
 });

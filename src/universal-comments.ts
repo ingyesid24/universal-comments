@@ -1,15 +1,43 @@
 import { LitElement, html, css } from 'lit';
-import { format } from 'timeago.js';
+import { live } from 'lit/directives/live.js';
 
-export interface Comment {
-  id: string;
-  text: string;
-  date: string;
-  name: string;
-  avatar: string;
-  emoji: string;
-  liked?: boolean;
-}
+import {
+  CommentsAdapterError,
+  toCommentsAdapterError,
+} from './errors.js';
+import { DEFAULT_MESSAGES } from './messages.js';
+import type { CommentsMessages } from './messages.js';
+import {
+  errorSummary,
+  normalizeComment,
+  normalizePage,
+  uniqueId,
+  upsertComment,
+  defaultAvatar,
+} from './internal/utils.js';
+import type {
+  Comment,
+  CommentAuthor,
+  CommentsAdapter,
+  NewCommentInput,
+} from './types.js';
+
+export type {
+  AdapterCallOptions,
+  Comment,
+  CommentAuthor,
+  CommentPage,
+  CommentQuery,
+  CommentsAdapter,
+  CommentsErrorCode,
+  NewCommentInput,
+} from './types.js';
+export {
+  CommentsAdapterError,
+  isCommentsAdapterError,
+  toCommentsAdapterError,
+} from './errors.js';export { DEFAULT_MESSAGES } from './messages.js';
+export type { CommentsMessages } from './messages.js';
 
 const NAMES = [
   'Ana García', 'Carlos López', 'María Rodríguez', 'José Martínez',
@@ -25,13 +53,9 @@ function randomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-let idCounter = 0;
-function uniqueId(): string {
-  try {
-    return crypto.randomUUID();
-  } catch {
-    return `cs-${++idCounter}-${Date.now()}`;
-  }
+interface ReactionBaseline {
+  emoji: string;
+  liked?: boolean;
 }
 
 /**
@@ -47,9 +71,15 @@ function uniqueId(): string {
  * @attr {number} char-limit - Max characters per comment (default: 500)
  *
  * @property {Array} initialComments - Seed comments programmatically
+ * @property {CommentsAdapter} adapter - Storage adapter (JS property only)
+ * @property {CommentAuthor} author - Author used for new comments (JS property only)
+ * @property {CommentsMessages} messages - UI copy overrides (JS property only)
  *
- * @fires comment-added - Dispatched when a comment is added (detail: { comment })
- * @fires comment-deleted - Dispatched when a comment is deleted (detail: { commentId })
+ * @fires comment-added - Dispatched when a comment has been added (detail: { comment })
+ * @fires comment-deleted - Dispatched when a comment has been deleted (detail: { commentId })
+ * @fires comments-loaded - Dispatched when an adapter finishes loading (detail: { comments })
+ * @fires comments-error - Dispatched when an adapter operation fails (detail: { operation, error, commentId? })
+ * @fires comment-reaction-changed - Dispatched after a persisted reaction (detail: { commentId, emoji })
  */
 export class UniversalComments extends LitElement {
   static properties = {
@@ -57,6 +87,11 @@ export class UniversalComments extends LitElement {
     placeholder: { type: String },
     theme: { type: String },
     charlimit: { type: Number, attribute: 'char-limit' },
+    // Declared so Lit preserves values assigned before the element is upgraded.
+    adapter: { attribute: false },
+    author: { attribute: false },
+    messages: { attribute: false },
+    initialComments: { attribute: false },
     _comments: { state: true },
     _newComment: { state: true },
     _error: { state: true },
@@ -64,6 +99,10 @@ export class UniversalComments extends LitElement {
     _loading: { state: true },
     _emojiPickerOpen: { state: true },
     _emojiPickerForComment: { state: true },
+    _loadError: { state: true },
+    _submitting: { state: true },
+    _actionErrors: { state: true },
+    _announcement: { state: true },
   };
 
   static styles = css`
@@ -72,29 +111,65 @@ export class UniversalComments extends LitElement {
       max-width: 56rem;
       margin: 0 auto;
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+      /* Public customization points (overridable from the light DOM). */
+      --uc-accent: #3b82f6;
+      --uc-accent-strong: #2563eb;
+      --uc-accent-strong-hover: #1d4ed8;
+      --uc-error: #ef4444;
+      --uc-error-light: #dc2626;
+      --uc-radius: 1rem;
     }
 
     * {
       box-sizing: border-box;
     }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .container {
       padding: 1.5rem;
-      border-radius: 1rem;
+      border-radius: var(--uc-radius);
       box-shadow:
         0 10px 15px -3px rgba(0, 0, 0, 0.1),
         0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
 
     .container.dark {
-      background: #0b1422;
-      color: #fff;
+      --uc-bg: #0b1422;
+      --uc-fg: #fff;
+      --uc-muted: rgba(255, 255, 255, 0.6);
+      --uc-border: #111c2d;
+      --uc-card-bg: #0b1422;
+      --uc-input-bg: #1e293b;
+      --uc-input-border: #334155;
+      background: var(--uc-bg);
+      color: var(--uc-fg);
     }
 
     .container.light {
-      background: #fff;
-      color: #1f2937;
-      border: 1px solid #e5e7eb;
+      --uc-bg: #fff;
+      --uc-fg: #1f2937;
+      --uc-muted: #6b7280;
+      --uc-border: #e5e7eb;
+      --uc-card-bg: #f9fafb;
+      --uc-input-bg: #fff;
+      --uc-input-border: #d1d5db;
+      --uc-error: var(--uc-error-light);
+      background: var(--uc-bg);
+      color: var(--uc-fg);
+      border: 1px solid var(--uc-border);
     }
 
     h2 {
@@ -123,27 +198,33 @@ export class UniversalComments extends LitElement {
 
     textarea:focus {
       outline: none;
-      box-shadow: 0 0 0 2px #3b82f6;
+      box-shadow: 0 0 0 2px var(--uc-accent);
+    }
+
+    button:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--uc-accent);
+      outline-offset: 2px;
     }
 
     .light textarea {
-      background: #fff;
-      color: #1f2937;
-      border: 1px solid #d1d5db;
+      background: var(--uc-input-bg);
+      color: var(--uc-fg);
+      border: 1px solid var(--uc-input-border);
     }
 
     .light textarea:focus {
-      border-color: #3b82f6;
+      border-color: var(--uc-accent);
     }
 
     .dark textarea {
-      background: #1e293b;
-      color: #fff;
-      border: 1px solid #334155;
+      background: var(--uc-input-bg);
+      color: var(--uc-fg);
+      border: 1px solid var(--uc-input-border);
     }
 
     .dark textarea:focus {
-      border-color: #3b82f6;
+      border-color: var(--uc-accent);
     }
 
     .char-count {
@@ -153,21 +234,56 @@ export class UniversalComments extends LitElement {
     }
 
     .dark .char-count {
-      color: rgba(255, 255, 255, 0.5);
+      color: var(--uc-muted);
     }
 
     .light .char-count {
-      color: #6b7280;
+      color: var(--uc-muted);
     }
 
     .char-count.over {
-      color: #ef4444;
+      color: var(--uc-error);
     }
 
     .error {
-      color: #ef4444;
+      color: var(--uc-error);
       font-size: 0.875rem;
       margin-top: 0.25rem;
+    }
+
+    .action-error {
+      margin-top: 0.75rem;
+    }
+
+    .error-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+    }
+
+    .error-state p {
+      margin: 0 0 0.5rem;
+    }
+
+    .error-detail {
+      font-size: 0.875rem;
+      color: var(--uc-muted);
+    }
+
+    .retry-btn {
+      margin-top: 0.5rem;
+      padding: 0.625rem 1rem;
+      border-radius: 0.625rem;
+      border: 1px solid var(--uc-accent);
+      background: var(--uc-accent-strong);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.875rem;
+    }
+
+    .retry-btn:hover {
+      background: var(--uc-accent-strong-hover);
     }
 
     .button-row {
@@ -205,7 +321,7 @@ export class UniversalComments extends LitElement {
 
     .submit-btn {
       padding: 0.75rem 1.5rem;
-      background: #3b82f6;
+      background: var(--uc-accent-strong);
       color: #fff;
       border: none;
       border-radius: 0.75rem;
@@ -217,7 +333,7 @@ export class UniversalComments extends LitElement {
     }
 
     .submit-btn:hover {
-      background: #2563eb;
+      background: var(--uc-accent-strong-hover);
     }
 
     .submit-btn:active {
@@ -313,8 +429,8 @@ export class UniversalComments extends LitElement {
     }
 
     .comment-card {
-      border: 1px solid #111c2d;
-      border-radius: 1rem;
+      border: 1px solid var(--uc-border);
+      border-radius: var(--uc-radius);
       padding: 1.25rem;
       animation: fadeInUp 0.3s ease;
       break-inside: avoid;
@@ -331,13 +447,18 @@ export class UniversalComments extends LitElement {
       border-width: 0;
     }
 
+    .comment-card:focus {
+      outline: 2px solid var(--uc-accent);
+      outline-offset: 2px;
+    }
+
     .dark .comment-card {
-      background: #0b1422;
+      background: var(--uc-card-bg);
     }
 
     .light .comment-card {
-      border-color: #e5e7eb;
-      background: #f9fafb;
+      border-color: var(--uc-border);
+      background: var(--uc-card-bg);
     }
 
     @keyframes fadeInUp {
@@ -376,11 +497,11 @@ export class UniversalComments extends LitElement {
     }
 
     .dark .time {
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--uc-muted);
     }
 
     .light .time {
-      color: #6b7280;
+      color: var(--uc-muted);
     }
 
     .comment-text {
@@ -429,13 +550,13 @@ export class UniversalComments extends LitElement {
       cursor: pointer;
       padding: 0.25rem 0.5rem;
       border-radius: 0.5rem;
-      opacity: 0.4;
-      transition: opacity 0.15s;
+      opacity: 1;
+      transition: background 0.15s;
       line-height: 1;
     }
 
     .delete-btn:hover {
-      opacity: 1;
+      background: rgba(239, 68, 68, 0.12);
     }
 
     .gradient-overlay {
@@ -448,11 +569,11 @@ export class UniversalComments extends LitElement {
     }
 
     .dark .gradient-overlay {
-      background: linear-gradient(to top, #0b1422, transparent);
+      background: linear-gradient(to top, var(--uc-bg), transparent);
     }
 
     .light .gradient-overlay {
-      background: linear-gradient(to top, #fff, transparent);
+      background: linear-gradient(to top, var(--uc-bg), transparent);
     }
 
     .show-more-btn {
@@ -463,8 +584,8 @@ export class UniversalComments extends LitElement {
       padding: 0.625rem 1rem;
       border-radius: 0.625rem;
       font-weight: 700;
-      border: 1px solid #3b82f6;
-      background: #3b82f6;
+      border: 1px solid var(--uc-accent);
+      background: var(--uc-accent-strong);
       color: #fff;
       cursor: pointer;
       transition: transform 0.3s, box-shadow 0.2s;
@@ -477,6 +598,7 @@ export class UniversalComments extends LitElement {
     }
 
     .show-more-btn:hover {
+      background: var(--uc-accent-strong-hover);
       transform: translateX(-50%) scale(1.05);
     }
 
@@ -504,8 +626,8 @@ export class UniversalComments extends LitElement {
     }
 
     .skeleton-card {
-      border: 1px solid #111c2d;
-      border-radius: 1rem;
+      border: 1px solid var(--uc-border);
+      border-radius: var(--uc-radius);
       padding: 1.25rem;
     }
 
@@ -555,11 +677,11 @@ export class UniversalComments extends LitElement {
     }
 
     .dark .empty-state {
-      color: rgba(255, 255, 255, 0.5);
+      color: var(--uc-muted);
     }
 
     .light .empty-state {
-      color: #9ca3af;
+      color: var(--uc-muted);
     }
 
     .empty-state p {
@@ -577,6 +699,17 @@ export class UniversalComments extends LitElement {
       left: 0;
       margin-bottom: 0.5rem;
       z-index: 10;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
     }
   `;
 
@@ -596,6 +729,28 @@ export class UniversalComments extends LitElement {
   declare _boundOnDocumentClick: (e: MouseEvent) => void;
   declare _spotlightVisible: boolean;
   declare _spotlightStyle: string;
+  declare _loadError: string;
+  declare _submitting: boolean;
+  declare _actionErrors: Map<string, string>;
+  declare _announcement: string;
+
+  private _adapter: CommentsAdapter | null = null;
+  private _author?: CommentAuthor;
+  private _messages?: Partial<CommentsMessages>;
+  private _loadController: AbortController | null = null;
+  private _createController: AbortController | null = null;
+  private _loadSeq = 0;
+  private _adapterVersion = 0;
+  private _commentsVersion = 0;
+  private _legacyTimer: number | null = null;
+  private _deleteControllers = new Map<string, AbortController>();
+  private _reactionBaselines = new Map<string, ReactionBaseline>();
+  private _reactionDesired = new Map<string, string>();
+  private _reactionRunning = new Set<string>();
+  private _reactionRunToken = new Map<string, number>();
+  private _reactionTokenCounter = 0;
+  private _reactionControllers = new Map<string, AbortController>();
+  private _boundOnDocumentKeyDown: (e: KeyboardEvent) => void;
 
   constructor() {
     super();
@@ -614,36 +769,175 @@ export class UniversalComments extends LitElement {
     this._deletingIds = new Set();
     this._spotlightVisible = false;
     this._spotlightStyle = '';
+    this._loadError = '';
+    this._submitting = false;
+    this._actionErrors = new Map();
+    this._announcement = '';
     this._boundOnDocumentClick = this._onDocumentClick.bind(this);
+    this._boundOnDocumentKeyDown = this._onDocumentKeyDown.bind(this);
+  }
+
+  /**
+   * Storage adapter. JS property only: objects are never serialized as HTML
+   * attributes. Assigning it triggers a load; assigning `null` keeps the
+   * current comments and returns to local-only behaviour.
+   */
+  get adapter(): CommentsAdapter | null {
+    return this._adapter;
+  }
+
+  set adapter(value: CommentsAdapter | null | undefined) {
+    const next = value ?? null;
+    if (next === this._adapter) return;
+
+    this._abortLoad();
+    this._adapterVersion += 1;
+    this._commentsVersion += 1;
+    this._abortCreate();
+    this._abortDeletes();
+    this._cancelReactions();
+    this._adapter = next;
+    this._loadError = '';
+    this._error = '';
+    this._actionErrors = new Map();
+    this._deletingIds.clear();
+    this._submitting = false;
+    this._emojiPickerOpen = false;
+    this._emojiPickerForComment = null;
+
+    if (next) {
+      this._clearLegacyTimer();
+      this._loading = true;
+      this._showAll = false;
+      this.requestUpdate();
+      if (this.isConnected) void this._loadComments();
+    } else {
+      this._loading = false;
+      this.requestUpdate();
+    }
+  }
+
+  /** Optional author used when a comment is created. JS property only. */
+  get author(): CommentAuthor | undefined {
+    return this._author;
+  }
+
+  set author(value: CommentAuthor | undefined) {
+    this._author = value;
+  }
+
+  /** Optional UI copy overrides. JS property only. */
+  get messages(): Partial<CommentsMessages> | undefined {
+    return this._messages;
+  }
+
+  set messages(value: Partial<CommentsMessages> | undefined) {
+    this._messages = value;
+    this.requestUpdate();
+  }
+
+  private get _m(): CommentsMessages {
+    return { ...DEFAULT_MESSAGES, ...(this._messages ?? {}) };
   }
 
   connectedCallback() {
     super.connectedCallback();
     document.addEventListener('click', this._boundOnDocumentClick);
-    setTimeout(() => {
-      this._loading = false;
-      this.requestUpdate();
-    }, 2000);
+    document.addEventListener('keydown', this._boundOnDocumentKeyDown);
+
+    if (this._adapter) {
+      void this._loadComments();
+      return;
+    }
+
+    if (this._loading && this._comments.length === 0) {
+      this._clearLegacyTimer();
+      this._announce(this._m.loading);
+      this._legacyTimer = window.setTimeout(() => {
+        this._legacyTimer = null;
+        this._loading = false;
+        this._announce(
+          this._comments.length === 0
+            ? this._m.empty
+            : this._m.commentCount(this._comments.length),
+        );
+        this.requestUpdate();
+      }, 2000);
+    }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     document.removeEventListener('click', this._boundOnDocumentClick);
+    document.removeEventListener('keydown', this._boundOnDocumentKeyDown);
+    this._clearLegacyTimer();
+    this._abortLoad();
+    this._abortCreate();
+    this._abortDeletes();
+    this._cancelReactions();
+    this._deletingIds.clear();
+    this._submitting = false;
+  }
+
+  private _clearLegacyTimer(): void {
+    if (this._legacyTimer !== null) {
+      window.clearTimeout(this._legacyTimer);
+      this._legacyTimer = null;
+    }
+  }
+
+  private _abortLoad(): void {
+    this._loadController?.abort();
+    this._loadController = null;
+    this._loadSeq += 1;
+  }
+
+  private _abortCreate(): void {
+    this._createController?.abort();
+    this._createController = null;
+  }
+
+  private _abortDeletes(): void {
+    for (const controller of this._deleteControllers.values()) {
+      controller.abort();
+    }
+    this._deleteControllers.clear();
+  }
+
+  private _cancelReaction(commentId: string): void {
+    this._reactionControllers.get(commentId)?.abort();
+    this._reactionControllers.delete(commentId);
+    this._reactionDesired.delete(commentId);
+    this._reactionBaselines.delete(commentId);
+    this._reactionRunning.delete(commentId);
+    this._reactionRunToken.delete(commentId);
+  }
+
+  private _cancelReactions(): void {
+    for (const controller of this._reactionControllers.values()) {
+      controller.abort();
+    }
+    this._reactionControllers.clear();
+    this._reactionDesired.clear();
+    this._reactionBaselines.clear();
+    this._reactionRunning.clear();
+    this._reactionRunToken.clear();
   }
 
   set initialComments(comments: Comment[]) {
-    this._comments = comments.map((c) => ({
-      id: c.id || uniqueId(),
-      text: c.text,
-      date: c.date || new Date().toISOString(),
-      name: c.name || 'Anónimo',
-      avatar:
-        c.avatar ||
-        `https://i.pravatar.cc/80?u=${c.id || uniqueId()}`,
-      emoji: c.emoji || '👍',
-      liked: c.liked,
-    }));
+    this._commentsVersion += 1;
+    this._cancelReactions();
+    this._abortDeletes();
+    this._deletingIds.clear();
+    this._comments = Array.isArray(comments)
+      ? comments.map(normalizeComment)
+      : [];
     this._loading = false;
+    this._loadError = '';
+    this._error = '';
+    this._actionErrors = new Map();
+    this._announcement = '';
+    this._clearLegacyTimer();
     this.requestUpdate();
   }
 
@@ -651,10 +945,83 @@ export class UniversalComments extends LitElement {
     return this._comments;
   }
 
+  /** Reloads comments from the configured adapter (no-op without one). */
+  async reload(): Promise<void> {
+    if (!this._adapter) return;
+    await this._loadComments();
+  }
+
   _emit(name: string, detail: Record<string, unknown>) {
     this.dispatchEvent(
       new CustomEvent(name, { detail, bubbles: true, composed: true }),
     );
+  }
+
+  private _announce(message: string): void {
+    this._announcement = message;
+  }
+
+  private _describeError(
+    prefix: string,
+    error: CommentsAdapterError,
+  ): string {
+    const detail = errorSummary(error);
+    return detail ? `${prefix}: ${detail}` : prefix;
+  }
+
+  private _setActionError(commentId: string, message: string): void {
+    const next = new Map(this._actionErrors);
+    next.set(commentId, message);
+    this._actionErrors = next;
+    this._announce(message);
+  }
+
+  private _clearActionError(commentId: string): void {
+    if (!this._actionErrors.has(commentId)) return;
+    const next = new Map(this._actionErrors);
+    next.delete(commentId);
+    this._actionErrors = next;
+  }
+
+  private _focusInput(): void {
+    this.updateComplete.then(() => {
+      this.renderRoot
+        .querySelector<HTMLTextAreaElement>('textarea')
+        ?.focus();
+    });
+  }
+
+  private _focusEmojiTrigger(): void {
+    this.updateComplete.then(() => {
+      this.renderRoot
+        .querySelector<HTMLButtonElement>('.emoji-btn')
+        ?.focus();
+    });
+  }
+
+  private _focusReactionTrigger(commentId: string): void {
+    this.updateComplete.then(() => {
+      const buttons = Array.from(
+        this.renderRoot.querySelectorAll<HTMLButtonElement>('.reaction-btn'),
+      );
+      buttons
+        .find((button) => button.dataset.commentId === commentId)
+        ?.focus();
+    });
+  }
+
+  private _focusAfterDelete(index: number): void {
+    this.updateComplete.then(() => {
+      const cards = Array.from(
+        this.renderRoot.querySelectorAll<HTMLElement>('.comment-card'),
+      );
+      if (cards.length === 0) {
+        this._focusInput();
+        return;
+      }
+      const targetIndex = Math.min(Math.max(index, 0), cards.length - 1);
+      cards[targetIndex]?.focus();
+    });
   }
 
   _onInput(e: Event) {
@@ -667,46 +1034,199 @@ export class UniversalComments extends LitElement {
   _onKeyDown(e: KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      this._addComment();
+      void this._addComment();
+    }
+  }
+
+  private _onDocumentKeyDown(e: KeyboardEvent) {
+    if (e.key !== 'Escape') return;
+    if (!this._emojiPickerOpen && this._emojiPickerForComment === null) {
+      return;
+    }
+
+    const commentId = this._emojiPickerForComment;
+    this._emojiPickerOpen = false;
+    this._emojiPickerForComment = null;
+    this.requestUpdate();
+
+    if (commentId) {
+      this._focusReactionTrigger(commentId);
+    } else {
+      this._focusEmojiTrigger();
     }
   }
 
   _addComment() {
     const now = Date.now();
-    if (now - this._lastSubmit < 500) {
-      return;
-    }
+    if (this._submitting) return;
+    if (now - this._lastSubmit < 500) return;
 
     const text = this._newComment.trim();
+    const messages = this._m;
+
     if (text.length < 3) {
-      this._error = 'El comentario debe tener al menos 3 caracteres';
+      this._error = messages.tooShort(3);
       this.requestUpdate();
       return;
     }
 
     if (text.length > this.charlimit) {
-      this._error = `El comentario no puede exceder ${this.charlimit} caracteres`;
+      this._error = messages.tooLong(this.charlimit);
       this.requestUpdate();
       return;
     }
 
     this._lastSubmit = now;
-    const comment = {
-      id: uniqueId(),
-      text,
-      date: new Date().toISOString(),
-      likes: 0,
-      liked: false,
-      emoji: '👍',
-      avatar: `https://i.pravatar.cc/80?u=${uniqueId()}`,
-      name: randomItem(NAMES),
-    };
-    this._comments = [comment, ...this._comments];
-    this._newComment = '';
+    const draft = this._newComment;
+
+    if (!this._adapter) {
+      const comment = {
+        id: uniqueId(),
+        text,
+        date: new Date().toISOString(),
+        likes: 0,
+        liked: false,
+        emoji: '👍',
+        avatar: defaultAvatar(uniqueId()),
+        name: randomItem(NAMES),
+      };
+      this._comments = [comment, ...this._comments];
+      this._newComment = '';
+      this._error = '';
+      this._emojiPickerOpen = false;
+      this._emit('comment-added', { comment });
+      this._announce(this._m.published);
+      this.requestUpdate();
+      return;
+    }
+
+    void this._createWithAdapter(text, draft);
+  }
+
+  /**
+   * Pessimistic create: the comment is rendered and `comment-added` is emitted
+   * only after the adapter confirms the operation.
+   */
+  private async _createWithAdapter(
+    text: string,
+    draft: string,
+  ): Promise<void> {
+    const adapter = this._adapter;
+    if (!adapter) return;
+
+    const adapterVersion = this._adapterVersion;
+    const controller = new AbortController();
+    this._createController?.abort();
+    this._createController = controller;
+    this._submitting = true;
     this._error = '';
-    this._emojiPickerOpen = false;
-    this._emit('comment-added', { comment });
+    this._announce(this._m.submitting);
     this.requestUpdate();
+
+    const input: NewCommentInput = this._author
+      ? { text, author: this._author }
+      : { text };
+
+    try {
+      const created = await adapter.create(input, {
+        signal: controller.signal,
+      });
+      if (
+        controller.signal.aborted ||
+        this._adapter !== adapter ||
+        this._adapterVersion !== adapterVersion
+      ) {
+        return;
+      }
+
+      const comment = normalizeComment(created);
+      this._comments = upsertComment(this._comments, comment);
+      if (this._newComment === draft) {
+        this._newComment = '';
+      }
+      this._error = '';
+      this._emojiPickerOpen = false;
+      this._emit('comment-added', { comment });
+      this._announce(this._m.published);
+      this.requestUpdate();
+      this._focusInput();
+    } catch (error) {
+      if (
+        controller.signal.aborted ||
+        this._adapter !== adapter ||
+        this._adapterVersion !== adapterVersion
+      ) {
+        return;
+      }
+      const normalized = toCommentsAdapterError(error);
+      this._error = this._describeError(
+        this._m.publishError,
+        normalized,
+      );
+      this._emit('comments-error', {
+        operation: 'create',
+        error: normalized,
+      });
+      this._announce(this._error);
+      this.requestUpdate();
+    } finally {
+      if (this._createController === controller) {
+        this._createController = null;
+        this._submitting = false;
+        this.requestUpdate();
+      }
+    }
+  }
+
+  private async _loadComments(): Promise<void> {
+    const adapter = this._adapter;
+    if (!adapter) return;
+
+    this._loadController?.abort();
+    const controller = new AbortController();
+    this._loadController = controller;
+    const seq = ++this._loadSeq;
+
+    this._loading = true;
+    this._loadError = '';
+    this._actionErrors = new Map();
+    this._announce(this._m.loading);
+    this.requestUpdate();
+
+    try {
+      const page = normalizePage(
+        await adapter.list({ signal: controller.signal }),
+      );
+      if (seq !== this._loadSeq || controller.signal.aborted) return;
+
+      this._commentsVersion += 1;
+      this._cancelReactions();
+      this._comments = page.comments;
+      this._error = '';
+      this._showAll = false;
+      this._emit('comments-loaded', {
+        comments: page.comments.map((comment) => ({ ...comment })),
+      });
+      this._announce(this._m.commentCount(page.comments.length));
+    } catch (error) {
+      if (seq !== this._loadSeq || controller.signal.aborted) return;
+
+      const normalized = toCommentsAdapterError(error);
+      if (normalized.code === 'aborted') return;
+
+      this._loadError = errorSummary(normalized) || this._m.loadError;
+      this._emit('comments-error', {
+        operation: 'load',
+        error: normalized,
+      });
+      this._announce(this._m.loadError);
+    } finally {
+      if (seq === this._loadSeq) {
+        this._loading = false;
+        this._loadController = null;
+        this.requestUpdate();
+      }
+    }
   }
 
   _toggleEmojiPicker(e: MouseEvent) {
@@ -721,6 +1241,7 @@ export class UniversalComments extends LitElement {
     this._newComment += emoji;
     this._emojiPickerOpen = false;
     this.requestUpdate();
+    this._focusInput();
   }
 
   _toggleCommentEmoji(e: Event, commentId: string) {
@@ -733,11 +1254,187 @@ export class UniversalComments extends LitElement {
 
   _setCommentEmoji(e: Event, commentId: string, emoji: string) {
     e.stopPropagation();
-    this._comments = this._comments.map((c) =>
-      c.id === commentId ? { ...c, emoji, liked: true } : c,
+
+    const previous = this._comments.find(
+      (comment) => comment.id === commentId,
+    );
+    if (!previous) return;
+
+    if (!this._reactionBaselines.has(commentId)) {
+      this._reactionBaselines.set(commentId, {
+        emoji: previous.emoji,
+        liked: previous.liked,
+      });
+    }
+
+    // Optimistic reaction; rolled back if the adapter rejects it.
+    this._comments = this._comments.map((comment) =>
+      comment.id === commentId ? { ...comment, emoji, liked: true } : comment,
     );
     this._emojiPickerForComment = null;
+    this._clearActionError(commentId);
     this.requestUpdate();
+    this._focusReactionTrigger(commentId);
+
+    const adapter = this._adapter;
+    if (!adapter?.react) {
+      this._reactionBaselines.delete(commentId);
+      return;
+    }
+
+    this._reactionDesired.set(commentId, emoji);
+    if (!this._reactionRunning.has(commentId)) {
+      const token = ++this._reactionTokenCounter;
+      this._reactionRunToken.set(commentId, token);
+      this._reactionRunning.add(commentId);
+      void this._drainReactions(commentId, adapter, token);
+    }
+  }
+
+  private async _drainReactions(
+    commentId: string,
+    adapter: CommentsAdapter,
+    token: number,
+  ): Promise<void> {
+    const react = adapter.react?.bind(adapter);
+    if (!react) return;
+
+    try {
+      while (
+        this._adapter === adapter &&
+        this._reactionRunToken.get(commentId) === token &&
+        this._reactionDesired.has(commentId)
+      ) {
+        const requestedEmoji = this._reactionDesired.get(commentId) as string;
+        this._reactionDesired.delete(commentId);
+        const version = this._commentsVersion;
+        const controller = new AbortController();
+        this._reactionControllers.set(commentId, controller);
+
+        let updated: Comment | void;
+        try {
+          updated = await react(commentId, requestedEmoji, {
+            signal: controller.signal,
+          });
+        } catch (error) {
+          if (controller.signal.aborted || this._adapter !== adapter) return;
+          if (
+            this._reactionRunToken.get(commentId) !== token ||
+            this._commentsVersion !== version
+          ) {
+            this._clearReactionState(commentId);
+            return;
+          }
+          // A newer reaction is queued: its result is authoritative.
+          if (this._reactionDesired.has(commentId)) continue;
+
+          const normalized = toCommentsAdapterError(error);
+          this._revertReaction(commentId);
+          this._setActionError(
+            commentId,
+            this._describeError(this._m.reactionError, normalized),
+          );
+          this._emit('comments-error', {
+            operation: 'react',
+            error: normalized,
+            commentId,
+            emoji: requestedEmoji,
+          });
+          this._clearReactionState(commentId);
+          this.requestUpdate();
+          return;
+        } finally {
+          if (this._reactionControllers.get(commentId) === controller) {
+            this._reactionControllers.delete(commentId);
+          }
+        }
+
+        if (controller.signal.aborted || this._adapter !== adapter) return;
+        if (
+          this._reactionRunToken.get(commentId) !== token ||
+          this._commentsVersion !== version
+        ) {
+          this._clearReactionState(commentId);
+          return;
+        }
+
+        this._applyReaction(commentId, requestedEmoji, updated);
+
+        if (!this._reactionDesired.has(commentId)) {
+          const appliedEmoji = this._currentEmoji(
+            commentId,
+            requestedEmoji,
+          );
+          this._reactionBaselines.delete(commentId);
+          this._emit('comment-reaction-changed', {
+            commentId,
+            emoji: appliedEmoji,
+          });
+          this.requestUpdate();
+          return;
+        }
+      }
+    } finally {
+      if (this._reactionRunToken.get(commentId) === token) {
+        this._reactionRunning.delete(commentId);
+        this._reactionControllers.delete(commentId);
+      }
+      if (this._adapter !== adapter) {
+        this._clearReactionState(commentId);
+      }
+    }
+  }
+
+  private _applyReaction(
+    commentId: string,
+    requestedEmoji: string,
+    updated: Comment | void,
+  ): void {
+    const raw =
+      updated && typeof updated === 'object'
+        ? (updated as Partial<Comment>)
+        : undefined;
+    const emoji =
+      raw && typeof raw.emoji === 'string' && raw.emoji.trim()
+        ? raw.emoji
+        : requestedEmoji;
+    const liked =
+      raw && typeof raw.liked === 'boolean' ? raw.liked : true;
+
+    // Merge only reaction fields: the rest of the comment is not replaced.
+    this._comments = this._comments.map((comment) =>
+      comment.id === commentId ? { ...comment, emoji, liked } : comment,
+    );
+
+    const baseline = this._reactionBaselines.get(commentId);
+    if (baseline) {
+      this._reactionBaselines.set(commentId, { emoji, liked });
+    }
+  }
+
+  private _revertReaction(commentId: string): void {
+    const baseline = this._reactionBaselines.get(commentId);
+    if (!baseline) return;
+
+    this._comments = this._comments.map((comment) =>
+      comment.id === commentId
+        ? { ...comment, emoji: baseline.emoji, liked: baseline.liked }
+        : comment,
+    );
+  }
+
+  private _currentEmoji(commentId: string, fallback: string): string {
+    return (
+      this._comments.find((comment) => comment.id === commentId)?.emoji ??
+      fallback
+    );
+  }
+
+  private _clearReactionState(commentId: string): void {
+    this._reactionControllers.get(commentId)?.abort();
+    this._reactionControllers.delete(commentId);
+    this._reactionDesired.delete(commentId);
+    this._reactionBaselines.delete(commentId);
   }
 
   _toggleShowAll() {
@@ -746,17 +1443,108 @@ export class UniversalComments extends LitElement {
 
   _deleteComment(e: Event, commentId: string) {
     e.stopPropagation();
+    if (this._deletingIds.has(commentId)) return;
+    if (!this._comments.some((comment) => comment.id === commentId)) return;
+
     this._deletingIds.add(commentId);
+    this._clearActionError(commentId);
     this.requestUpdate();
-    setTimeout(() => {
-      this._comments = this._comments.filter((c) => c.id !== commentId);
-      this._deletingIds.delete(commentId);
-      if (this._emojiPickerForComment === commentId) {
-        this._emojiPickerForComment = null;
+
+    const controller = new AbortController();
+    this._deleteControllers.set(commentId, controller);
+    void this._removeComment(
+      commentId,
+      this._adapter,
+      this._adapterVersion,
+      controller,
+    );
+  }
+
+  private _exitDelay(): number {
+    return typeof matchMedia === 'function' &&
+      matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 0
+      : 300;
+  }
+
+  private async _removeComment(
+    commentId: string,
+    adapter: CommentsAdapter | null,
+    adapterVersion: number,
+    controller: AbortController,
+  ): Promise<void> {
+    const isObsolete = (): boolean =>
+      controller.signal.aborted ||
+      this._adapter !== adapter ||
+      this._adapterVersion !== adapterVersion;
+
+    try {
+      if (adapter) {
+        await adapter.remove(commentId, { signal: controller.signal });
+        if (isObsolete()) return;
+        // Keep the existing exit animation before removing the node.
+        await new Promise((resolve) =>
+          setTimeout(resolve, this._exitDelay()),
+        );
+      } else {
+        await new Promise((resolve) =>
+          setTimeout(resolve, this._exitDelay()),
+        );
       }
-      this._emit('comment-deleted', { commentId });
+
+      if (isObsolete()) return;
+      this._finishDelete(commentId);
+    } catch (error) {
+      if (isObsolete()) return;
+
+      const normalized = toCommentsAdapterError(error);
+      this._deletingIds.delete(commentId);
+      this._setActionError(
+        commentId,
+        this._describeError(this._m.deleteError, normalized),
+      );
+      this._emit('comments-error', {
+        operation: 'delete',
+        error: normalized,
+        commentId,
+      });
       this.requestUpdate();
-    }, 300);
+    } finally {
+      if (this._deleteControllers.get(commentId) === controller) {
+        this._deleteControllers.delete(commentId);
+      }
+    }
+  }
+
+  private _finishDelete(commentId: string): void {
+    if (!this._comments.some((comment) => comment.id === commentId)) {
+      this._deletingIds.delete(commentId);
+      this._cancelReaction(commentId);
+      return;
+    }
+
+    const index = this._comments.findIndex(
+      (comment) => comment.id === commentId,
+    );
+
+    this._comments = this._comments.filter(
+      (comment) => comment.id !== commentId,
+    );
+    this._deletingIds.delete(commentId);
+    this._cancelReaction(commentId);
+    this._clearActionError(commentId);
+
+    if (this._emojiPickerForComment === commentId) {
+      this._emojiPickerForComment = null;
+    }
+    if (this._emojiPickerOpen) {
+      this._emojiPickerOpen = false;
+    }
+
+    this._emit('comment-deleted', { commentId });
+    this._announce(this._m.deleted);
+    this.requestUpdate();
+    this._focusAfterDelete(index);
   }
 
   _onDocumentClick(e: MouseEvent) {
@@ -787,7 +1575,7 @@ export class UniversalComments extends LitElement {
 
   _renderSkeleton() {
     return html`
-      <div class="skeleton-grid">
+      <div class="skeleton-grid" aria-hidden="true">
         ${[1, 2, 3, 4, 5, 6].map(
           () => html`
             <div class="skeleton-card">
@@ -804,13 +1592,37 @@ export class UniversalComments extends LitElement {
 
   _renderEmpty() {
     return html`
-      <div class="empty-state">
-        <p>No hay comentarios aún</p>
+      <div class="empty-state" part="empty">
+        <p>${this._m.empty}</p>
+      </div>
+    `;
+  }
+
+  private _renderLoadError() {
+    const messages = this._m;
+    const detail =
+      this._loadError && this._loadError !== messages.loadError
+        ? this._loadError
+        : '';
+
+    return html`
+      <div class="error-state" part="error" role="alert">
+        <p>${messages.loadError}</p>
+        ${detail ? html`<p class="error-detail">${detail}</p>` : ''}
+        <button
+          class="retry-btn"
+          part="retry"
+          type="button"
+          @click="${() => void this.reload()}"
+        >
+          ${messages.retry}
+        </button>
       </div>
     `;
   }
 
   _renderComments() {
+    const messages = this._m;
     const visible = this._showAll
       ? this._comments
       : this._comments.slice(0, this.maxcomments);
@@ -819,46 +1631,71 @@ export class UniversalComments extends LitElement {
 
     return html`
       <div class="comment-area">
-        <div class="comment-grid${truncated ? ' truncated' : ''}">
-          ${visible.map(
-            (c) => html`
-              <div class="comment-card${this._deletingIds.has(c.id) ? ' deleting' : ''}">
+        <div
+          class="comment-grid${truncated ? ' truncated' : ''}"
+          role="list"
+        >
+          ${visible.map((c) => {
+            const deleting = this._deletingIds.has(c.id);
+            const actionError = this._actionErrors.get(c.id);
+            const pickerOpen = this._emojiPickerForComment === c.id;
+
+            return html`
+              <div
+                class="comment-card${deleting ? ' deleting' : ''}"
+                role="listitem"
+                tabindex="-1"
+                part="comment-card"
+                data-comment-id="${c.id}"
+                aria-busy="${deleting ? 'true' : 'false'}"
+              >
                 <div class="card-header">
                   <img
                     class="avatar"
+                    part="avatar"
                     src="${c.avatar}"
-                    alt="Avatar de ${c.name}"
+                    alt=""
                     loading="lazy"
                     width="64"
                     height="64"
                   />
                   <div>
-                    <p class="name">${c.name}</p>
-                    <p class="time">${format(c.date)}</p>
+                    <p class="name" part="name">${c.name}</p>
+                    <p class="time" part="time">${messages.timeAgo(c.date)}</p>
                   </div>
                 </div>
-                <p class="comment-text">${c.text}</p>
+                <p class="comment-text" part="text">${c.text}</p>
                 <div class="card-footer">
                   <div class="reaction-wrapper">
                     <button
                       class="reaction-btn"
+                      part="reaction"
+                      type="button"
+                      data-comment-id="${c.id}"
                       @click="${(e: Event) => this._toggleCommentEmoji(e, c.id)}"
-                      aria-label="Reaccionar al comentario"
+                      aria-label="${messages.reactionLabel} ${c.name}"
+                      aria-expanded="${pickerOpen ? 'true' : 'false'}"
+                      aria-pressed="${c.liked === true ? 'true' : 'false'}"
                     >
                       ${c.emoji}
                     </button>
-                    ${this._emojiPickerForComment === c.id
+                    ${pickerOpen
                       ? html`
                           <div class="reaction-picker">
-                            <div class="emoji-picker-grid">
+                            <div
+                              class="emoji-picker-grid"
+                              role="group"
+                              aria-label="${messages.reactionLabel}"
+                            >
                               ${EMOJIS.map(
-                                (e) => html`
+                                (emoji) => html`
                                   <button
+                                    type="button"
                                     @click="${(ev: Event) =>
-                                      this._setCommentEmoji(ev, c.id, e)}"
-                                    aria-label="${e}"
+                                      this._setCommentEmoji(ev, c.id, emoji)}"
+                                    aria-label="${emoji}"
                                   >
-                                    ${e}
+                                    ${emoji}
                                   </button>
                                 `,
                               )}
@@ -869,22 +1706,39 @@ export class UniversalComments extends LitElement {
                   </div>
                   <button
                     class="delete-btn"
+                    part="delete"
+                    type="button"
+                    ?disabled="${deleting}"
                     @click="${(e: Event) => this._deleteComment(e, c.id)}"
-                    aria-label="Eliminar comentario de ${c.name}"
+                    aria-label="${messages.deleteLabel} ${c.name}"
+                    title="${messages.deleteLabel} ${c.name}"
                   >
                     🗑
                   </button>
                 </div>
+                ${actionError
+                  ? html`<p class="error action-error" role="alert">
+                      ${actionError}
+                    </p>`
+                  : ''}
               </div>
-            `,
-          )}
+            `;
+          })}
         </div>
-        ${truncated ? html`<div class="gradient-overlay"></div>` : ''}
+        ${truncated
+          ? html`<div class="gradient-overlay" aria-hidden="true"></div>`
+          : ''}
       </div>
       ${this._comments.length > this.maxcomments
         ? html`
-            <button class="show-more-btn" @click="${this._toggleShowAll}">
-              ${this._showAll ? 'Ver menos' : 'Ver más'}
+            <button
+              class="show-more-btn"
+              part="show-more"
+              type="button"
+              aria-expanded="${this._showAll ? 'true' : 'false'}"
+              @click="${this._toggleShowAll}"
+            >
+              ${this._showAll ? messages.showLess : messages.showMore}
             </button>
           `
         : ''}
@@ -892,58 +1746,95 @@ export class UniversalComments extends LitElement {
   }
 
   render() {
+    const messages = this._m;
+    const busy = this._loading || this._submitting;
+    const showSkeleton = this._loading && this._comments.length === 0;
+    const theme = this.theme === 'light' ? 'light' : 'dark';
+
     return html`
-      <div class="container ${this.theme}">
-        <h2>Comentarios</h2>
+      <div
+        class="container ${theme}"
+        part="container"
+        aria-busy="${busy ? 'true' : 'false'}"
+      >
+        <p
+          class="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          ${this._announcement}
+        </p>
+        <h2 part="title">${messages.title}</h2>
 
         <div class="input-area">
           <div class="input-spotlight"
             @mousemove="${this._onInputSpotlightMove}"
             @mouseleave="${this._onInputSpotlightLeave}">
             <textarea
-              .value="${this._newComment}"
+              .value="${live(this._newComment)}"
               @input="${this._onInput}"
               @keydown="${this._onKeyDown}"
               placeholder="${this.placeholder}"
               maxlength="${this.charlimit}"
-              aria-label="Escribe un comentario"
+              aria-label="${messages.composerLabel}"
+              aria-describedby="char-hint"
+              part="textarea"
             ></textarea>
             <div class="input-spotlight-overlay${this._spotlightVisible ? ' visible' : ''}" style="${this._spotlightStyle}"></div>
           </div>
+          <span id="char-hint" class="sr-only">
+            ${messages.charLimitHint(this.charlimit)}
+          </span>
           <div class="char-count${this._newComment.length > this.charlimit * 0.9
             ? ' over'
-            : ''}">
+            : ''}" part="char-count" aria-hidden="true">
             ${this._newComment.length}/${this.charlimit}
           </div>
-          ${this._error ? html`<p class="error">${this._error}</p>` : ''}
+          ${this._error
+            ? html`<p class="error" role="alert" part="error">
+                ${this._error}
+              </p>`
+            : ''}
           <div class="button-row">
             <button
               class="emoji-btn"
+              part="emoji-button"
+              type="button"
               @click="${this._toggleEmojiPicker}"
-              title="Añadir emoji"
-              aria-label="Abrir selector de emojis"
+              title="${messages.emojiPickerLabel}"
+              aria-label="${messages.emojiPickerLabel}"
+              aria-expanded="${this._emojiPickerOpen ? 'true' : 'false'}"
             >
               😊
             </button>
             <button
               class="submit-btn"
+              part="submit"
+              type="button"
               @click="${this._addComment}"
-              ?disabled="${this._loading}"
+              ?disabled="${busy}"
             >
-              Publicar comentario
+              ${this._submitting ? messages.submitting : messages.submit}
             </button>
           </div>
           ${this._emojiPickerOpen
             ? html`
                 <div class="emoji-picker-wrapper">
-                  <div class="emoji-picker-grid">
+                  <div
+                    class="emoji-picker-grid"
+                    role="group"
+                    aria-label="${messages.emojiPickerLabel}"
+                  >
                     ${EMOJIS.map(
-                      (e) => html`
+                      (emoji) => html`
                         <button
-                          @click="${(ev: Event) => this._handleTextEmojiSelect(ev, e)}"
-                          aria-label="${e}"
+                          type="button"
+                          @click="${(ev: Event) =>
+                            this._handleTextEmojiSelect(ev, emoji)}"
+                          aria-label="${emoji}"
                         >
-                          ${e}
+                          ${emoji}
                         </button>
                       `,
                     )}
@@ -953,17 +1844,25 @@ export class UniversalComments extends LitElement {
             : ''}
         </div>
 
-        ${this._loading
+        ${showSkeleton
           ? this._renderSkeleton()
-          : this._comments.length === 0
-            ? this._renderEmpty()
-            : this._renderComments()}
+          : html`
+              ${this._loadError ? this._renderLoadError() : ''}
+              ${this._comments.length === 0
+                ? this._loadError
+                  ? ''
+                  : this._renderEmpty()
+                : this._renderComments()}
+            `}
       </div>
     `;
   }
 }
 
-if (typeof customElements !== 'undefined') {
+if (
+  typeof customElements !== 'undefined' &&
+  !customElements.get('universal-comments')
+) {
   customElements.define('universal-comments', UniversalComments);
 }
 

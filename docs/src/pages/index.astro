@@ -2,15 +2,16 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import DemoEmbed from "../components/DemoEmbed.astro";
 import CodeBlock from "../components/CodeBlock.astro";
+import { CDN_URL, SPONSOR_URL, REPO_URL } from "../site";
 ---
 
 <BaseLayout title="universal-comments — Componente de comentarios para cualquier web">
   <section class="relative mx-auto max-w-5xl px-6 pt-20 pb-10 text-center overflow-hidden">
-    <div class="pointer-events-none absolute inset-0 -z-10 bg-[#000000] bg-[radial-gradient(#ffffff33_1px,#00091d_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
+    <div class="pointer-events-none absolute inset-0 -z-10 bg-[#000000] bg-[radial-gradient(#ffffff33_1px,#00091d_1px)] bg-size-[20px_20px] mask-[radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
     <div class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
     <h1 class="text-4xl md:text-6xl font-extrabold leading-tight relative">
       Comentarios para
-      <span class="text-[#3b82f6] inline-flex items-center">
+      <span class="text-brand-blue inline-flex items-center">
         <span id="typing-text"></span><span id="cursor" class="animate-blink">|</span>
       </span>
     </h1>
@@ -19,14 +20,14 @@ import CodeBlock from "../components/CodeBlock.astro";
       Funciona en HTML, React, Astro, Next.js y cualquier framework.
     </p>
     <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-      <a href="/guia-rapida" class="inline-flex h-12 animate-background-shine items-center justify-center rounded-xl border border-gray-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] px-6 font-bold text-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-50">Comenzar</a>
-      <a href="/ejemplos" class="rounded-xl border border-[#111C2D] px-6 py-3 font-bold text-white/80 hover:text-white hover:border-white/20 transition-colors">Ver ejemplos</a>
+      <a href="/guia-rapida" class="inline-flex h-12 animate-background-shine items-center justify-center rounded-xl border border-gray-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-size-[200%_100%] px-6 font-bold text-gray-400 transition-colors focus:outline-hidden focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-50">Comenzar</a>
+      <a href="/ejemplos" class="rounded-xl border border-brand-card px-6 py-3 font-bold text-white/80 hover:text-white hover:border-white/20 transition-colors">Ver ejemplos</a>
     </div>
     <div class="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm">
-      <span class="badge-shine relative inline-flex items-center gap-1 overflow-hidden rounded-full border border-gray-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] px-3 py-1 text-white/70 animate-background-shine">⚡ Web Component</span>
-      <span class="badge-shine relative inline-flex items-center gap-1 overflow-hidden rounded-full border border-gray-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] px-3 py-1 text-white/70 animate-background-shine">📦 12 KB gzip</span>
-      <span class="badge-shine relative inline-flex items-center gap-1 overflow-hidden rounded-full border border-gray-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] px-3 py-1 text-white/70 animate-background-shine">🌙 Dark / Light</span>
-      <span class="badge-shine relative inline-flex items-center gap-1 overflow-hidden rounded-full border border-gray-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] px-3 py-1 text-white/70 animate-background-shine">📱 Responsive</span>
+      <span class="badge-shine relative inline-flex items-center gap-1 overflow-hidden rounded-full border border-gray-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-size-[200%_100%] px-3 py-1 text-white/70 animate-background-shine">⚡ Web Component</span>
+      <span class="badge-shine relative inline-flex items-center gap-1 overflow-hidden rounded-full border border-gray-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-size-[200%_100%] px-3 py-1 text-white/70 animate-background-shine">📦 ~18 KB gzip</span>
+      <span class="badge-shine relative inline-flex items-center gap-1 overflow-hidden rounded-full border border-gray-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-size-[200%_100%] px-3 py-1 text-white/70 animate-background-shine">🌙 Dark / Light</span>
+      <span class="badge-shine relative inline-flex items-center gap-1 overflow-hidden rounded-full border border-gray-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-size-[200%_100%] px-3 py-1 text-white/70 animate-background-shine">📱 Responsive</span>
     </div>
   </section>
 
@@ -40,24 +41,24 @@ import CodeBlock from "../components/CodeBlock.astro";
     <h2 class="text-2xl font-bold mb-2 text-center">Instalación en 1 línea</h2>
     <p class="text-center text-white/50 mb-6 text-sm">Funciona en cualquier proyecto, sin importar el framework</p>
     <div class="grid gap-6 md:grid-cols-2">
-      <div class="relative rounded-2xl border border-[#111C2D] bg-[#0D1525] p-6 overflow-hidden">
+      <div class="relative rounded-2xl border border-brand-card bg-[#0D1525] p-6 overflow-hidden">
         <div class="pointer-events-none absolute top-0 left-0 right-0 flex justify-center">
-          <div class="h-[1px] animate-border-width rounded-full bg-gradient-to-r from-[rgba(17,17,17,0)] via-[#3b82f6] to-[rgba(17,17,17,0)] transition-all duration-1000"></div>
+          <div class="h-px animate-border-width rounded-full bg-linear-to-r from-[rgba(17,17,17,0)] via-brand-blue to-[rgba(17,17,17,0)] transition-all duration-1000"></div>
         </div>
         <h3 class="font-semibold mb-3">npm / pnpm / bun</h3>
         <CodeBlock code={`npm install universal-comments
 pnpm add universal-comments
+yarn add universal-comments
 bun add universal-comments`} lang="bash" />
-        <CodeBlock code={`import "universal-comments";\n\n<universal-comments></universal-comments>`} lang="html" />
+        <CodeBlock code={`import "universal-comments";\n\n// <universal-comments></universal-comments>`} lang="js" />
       </div>
-      <div class="relative rounded-2xl border border-[#111C2D] bg-[#0D1525] p-6 overflow-hidden">
+      <div class="relative rounded-2xl border border-brand-card bg-[#0D1525] p-6 overflow-hidden">
         <div class="pointer-events-none absolute top-0 left-0 right-0 flex justify-center">
-          <div class="h-[1px] animate-border-width rounded-full bg-gradient-to-r from-[rgba(17,17,17,0)] via-[#3b82f6] to-[rgba(17,17,17,0)] transition-all duration-1000"></div>
+          <div class="h-px animate-border-width rounded-full bg-linear-to-r from-[rgba(17,17,17,0)] via-brand-blue to-[rgba(17,17,17,0)] transition-all duration-1000"></div>
         </div>
         <h3 class="font-semibold mb-3">CDN</h3>
-        <CodeBlock code={`<script type="module">
-  import "https://unpkg.com/universal-comments/dist/universal-comments.es.js";
-</script>
+        <CodeBlock code={`<script type="module" src="${CDN_URL}"></script>
+
 <universal-comments></universal-comments>`} lang="html" />
       </div>
     </div>
@@ -71,12 +72,12 @@ bun add universal-comments`} lang="bash" />
         { icon: "🌙", title: "Dark & Light theme", desc: "Soporta ambos temas con el atributo theme='dark' | 'light'." },
         { icon: "😊", title: "Reacciones con emojis", desc: "Selector de emojis integrado para reaccionar a cada comentario." },
         { icon: "📱", title: "Responsive grid", desc: "Grid adaptativo: 1, 2 o 3 columnas según el viewport." },
-        { icon: "⚡", title: "Ligero y rápido", desc: "~12 KB gzip. Sin dependencias pesadas ni runtime overhead." },
-        { icon: "💾", title: "Persistencia flexible", desc: "API opcional para conectar a tu backend o localStorage." },
-        { icon: "♿", title: "Accesible", desc: "ARIA labels, roles, live regions. Pensado para todos." },
+        { icon: "⚡", title: "Ligero y rápido", desc: "~18 KB gzip el componente principal; los adaptadores se cargan aparte." },
+        { icon: "💾", title: "Persistencia flexible", desc: "Adaptadores de memoria, REST o propios. El componente no impone backend." },
+        { icon: "♿", title: "Accesible", desc: "ARIA, live regions, foco, estados de error y prefers-reduced-motion." },
         { icon: "📦", title: "TypeScript + Tests", desc: "Tipado completo y test suite con @web/test-runner." },
       ].map((feat) => (
-        <div class="spotlight-card relative overflow-hidden rounded-2xl border border-[#111C2D] bg-[#0D1525] p-5" data-spotlight>
+        <div class="spotlight-card relative overflow-hidden rounded-2xl border border-brand-card bg-[#0D1525] p-5" data-spotlight>
           <div class="pointer-events-none absolute -inset-px opacity-0 transition duration-300" data-spotlight-effect></div>
           <div class="relative z-10">
             <div class="text-3xl mb-3">{feat.icon}</div>
@@ -85,6 +86,22 @@ bun add universal-comments`} lang="bash" />
           </div>
         </div>
       ))}
+    </div>
+  </section>
+  <section class="mx-auto max-w-3xl px-6 pb-20 text-center">
+    <div class="relative overflow-hidden rounded-2xl border border-pink-500/30 bg-[#0D1525] p-8">
+      <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(236,72,153,0.15),transparent_70%)]"></div>
+      <div class="relative">
+        <h2 class="text-2xl font-bold mb-2">Open source y gratis para siempre</h2>
+        <p class="text-white/60 mb-6">
+          universal-comments es MIT y lo mantiene una sola persona. Si te ahorra tiempo en tu proyecto,
+          puedes apoyar su desarrollo o dejar una ⭐ en GitHub para que más gente lo encuentre.
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <a href={SPONSOR_URL} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-xl border border-pink-500/50 bg-pink-500/15 px-6 py-3 font-bold text-pink-100 hover:bg-pink-500/25 transition-colors">♥ Patrocinar en GitHub</a>
+          <a href={REPO_URL} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-xl border border-brand-card px-6 py-3 font-bold text-white/80 hover:text-white hover:border-white/20 transition-colors">⭐ Dar una estrella</a>
+        </div>
+      </div>
     </div>
   </section>
 </BaseLayout>

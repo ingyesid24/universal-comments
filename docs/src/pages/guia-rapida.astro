@@ -2,27 +2,34 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Sidebar from "../components/Sidebar.astro";
 import CodeBlock from "../components/CodeBlock.astro";
+import { CDN_URL } from "../site";
 ---
 
-<BaseLayout title="Guía rápida — universal-comments">
-  <div class="fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px]"></div>
+<BaseLayout title="Guía rápida — universal-comments" description="Instala universal-comments con npm, pnpm, yarn o bun, o úsalo desde CDN sin build. Ejemplos para HTML, React, Next.js y Astro.">
+  <div class="fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-size-[14px_24px]"></div>
   <div class="mx-auto max-w-7xl px-6 pt-12 pb-20 flex gap-12">
     <Sidebar />
     <article class="min-w-0 flex-1 max-w-3xl prose prose-invert">
-      <h1 class="text-3xl font-bold inline-block bg-gradient-to-r from-white via-[#3b82f6] to-white bg-[length:200%_auto] bg-clip-text text-transparent animate-background-shine">Guía rápida</h1>
+      <h1 class="text-3xl font-bold inline-block bg-linear-to-r from-white via-brand-blue to-white bg-size-[200%_auto] bg-clip-text text-transparent animate-background-shine">Guía rápida</h1>
 
       <h2 class="text-xl font-semibold mt-8">Instalación</h2>
       <CodeBlock code={`npm install universal-comments
 pnpm add universal-comments
+yarn add universal-comments
 bun add universal-comments`} lang="bash" />
 
-      <h2 class="text-xl font-semibold mt-8">Uso en HTML plano</h2>
-      <p class="text-white/60">Importa el script y usa la etiqueta directamente:</p>
-      <CodeBlock code={`<script type="module">
-  import "universal-comments";
-</script>
+      <h2 class="text-xl font-semibold mt-8">Uso con un bundler (Vite, webpack, Next.js…)</h2>
+      <p class="text-white/60">Importa el paquete una vez en tu código y usa la etiqueta donde quieras:</p>
+      <CodeBlock code={`import "universal-comments";
 
-<universal-comments></universal-comments>`} lang="html" />
+// En tu HTML o plantilla:
+// <universal-comments></universal-comments>`} lang="js" />
+
+      <h2 class="text-xl font-semibold mt-8">HTML plano, sin instalar nada</h2>
+      <p class="text-white/60">Copia esto en cualquier archivo <code class="text-white/80">.html</code>: carga el componente desde CDN (incluye Lit, no necesita build).</p>
+      <CodeBlock code={`<script type="module" src="${CDN_URL}"></script>
+
+<universal-comments theme="dark"></universal-comments>`} lang="html" />
 
       <h2 class="text-xl font-semibold mt-8">Uso en React / Next.js</h2>
       <p class="text-white/60">Los Web Components se usan como etiquetas HTML normales en JSX:</p>
@@ -57,22 +64,50 @@ function App() {
   import "universal-comments";
 </script>`} lang="astro" />
 
+      <h2 class="text-xl font-semibold mt-8">Conectar un backend</h2>
+      <p class="text-white/60">Sin adaptador, los comentarios viven en memoria. Para persistir, asigna un adaptador por propiedad JavaScript:</p>
+      <CodeBlock code={`import { InMemoryCommentsAdapter } from "universal-comments/adapters";
+
+const el = document.querySelector("universal-comments");
+el.adapter = new InMemoryCommentsAdapter({ comments: [] });
+el.author = { name: "Ana García" };`} lang="js" />
+      <p class="text-white/60 mt-2">El adaptador en memoria es solo para demos y tests. Para un backend real, implementa el contrato <code class="text-white/80">CommentsAdapter</code> o usa <code class="text-white/80">createRestCommentsAdapter</code>. Consulta la <a class="text-brand-blue" href="/adaptadores">guía de adaptadores</a>.</p>
+
       <h2 class="text-xl font-semibold mt-8">CDN (sin npm)</h2>
-      <p class="text-white/60">Si no usas npm, carga desde CDN:</p>
-      <CodeBlock code={`<script src="https://unpkg.com/universal-comments"></script>
+      <p class="text-white/60">Funciona con jsDelivr o unpkg. Fija la versión (<code class="text-white/80">@0.1</code>) para que una versión nueva no cambie tu sitio sin avisar:</p>
+      <CodeBlock code={`<!-- jsDelivr -->
+<script type="module" src="${CDN_URL}"></script>
+
+<!-- o unpkg -->
+<script type="module" src="https://unpkg.com/universal-comments@0.1/dist/universal-comments.es.js"></script>
+
 <universal-comments theme="light"></universal-comments>`} lang="html" />
+      <p class="text-white/60 mt-2">Para conectar tu backend desde CDN, importa los adaptadores como módulo:</p>
+      <CodeBlock code={`<script type="module">
+  import "${CDN_URL}";
+  import { createRestCommentsAdapter } from "https://cdn.jsdelivr.net/npm/universal-comments@0.1/dist/adapters.es.js";
+
+  document.querySelector("universal-comments").adapter =
+    createRestCommentsAdapter({
+      urls: {
+        list: "/api/comments",
+        create: "/api/comments",
+        remove: (id) => "/api/comments/" + id,
+      },
+    });
+</script>`} lang="html" />
 
       <h2 class="text-xl font-semibold mt-8">Build desde el repo</h2>
-      <div class="relative overflow-hidden rounded-xl border border-[#111C2D] p-[1px] backdrop-blur-3xl">
+      <div class="relative overflow-hidden rounded-xl border border-brand-card p-px backdrop-blur-3xl">
         <span class="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,rgba(59,130,246,0.5)_0%,rgba(59,130,246,0.1)_50%,rgba(59,130,246,0.5)_100%)]" />
-        <div class="relative bg-[#0B1422] rounded-xl">
+        <div class="relative bg-brand-bg rounded-xl">
           <CodeBlock code={`git clone https://github.com/ingyesid24/universal-comments.git
 cd universal-comments
 npm install
 npm run build`} lang="bash" />
         </div>
       </div>
-      <p class="text-white/60 mt-2">Los archivos compilados quedan en <code class="text-white">dist/</code>. Copia <code>universal-comments.es.js</code> o <code>universal-comments.umd.js</code> a tu proyecto.</p>
+      <p class="text-white/60 mt-2">Los archivos compilados quedan en <code class="text-white">dist/</code>: <code>universal-comments.es.js</code>, <code>universal-comments.umd.cjs</code>, <code>adapters.es.js</code> y <code>adapters.cjs</code>. La documentación consume <code>dist/</code>, así que compila antes de <code>cd docs && npm run dev</code>.</p>
     </article>
   </div>
 </BaseLayout>
